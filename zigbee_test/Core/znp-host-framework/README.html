@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* GitHub stylesheet for MarkdownPad (http://markdownpad.com) */
+/* Author: Nicolas Hery - http://nicolashery.com */
+/* Version: b13fe65ca28d2e568c6ed5d7f06581183df8f2ff */
+/* Source: https://github.com/nicolahery/markdownpad-github */
+
+/* RESET
+=============================================================================*/
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* BODY
+=============================================================================*/
+
+body {
+  font-family: Helvetica, arial, freesans, clean, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  background-color: #fff;
+  padding: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+body>*:first-child {
+  margin-top: 0 !important;
+}
+
+body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* BLOCKS
+=============================================================================*/
+
+p, blockquote, ul, ol, dl, table, pre {
+  margin: 15px 0;
+}
+
+/* HEADERS
+=============================================================================*/
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 20px 0 10px;
+  padding: 0;
+  font-weight: bold;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 tt, h1 code, h2 tt, h2 code, h3 tt, h3 code, h4 tt, h4 code, h5 tt, h5 code, h6 tt, h6 code {
+  font-size: inherit;
+}
+
+h1 {
+  font-size: 28px;
+  color: #000;
+}
+
+h2 {
+  font-size: 24px;
+  border-bottom: 1px solid #ccc;
+  color: #000;
+}
+
+h3 {
+  font-size: 18px;
+}
+
+h4 {
+  font-size: 16px;
+}
+
+h5 {
+  font-size: 14px;
+}
+
+h6 {
+  color: #777;
+  font-size: 14px;
+}
+
+body>h2:first-child, body>h1:first-child, body>h1:first-child+h2, body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+h1+p, h2+p, h3+p, h4+p, h5+p, h6+p {
+  margin-top: 10px;
+}
+
+/* LINKS
+=============================================================================*/
+
+a {
+  color: #4183C4;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* LISTS
+=============================================================================*/
+
+ul, ol {
+  padding-left: 30px;
+}
+
+ul li > :first-child, 
+ol li > :first-child, 
+ul li ul:first-of-type, 
+ol li ol:first-of-type, 
+ul li ol:first-of-type, 
+ol li ul:first-of-type {
+  margin-top: 0px;
+}
+
+ul ul, ul ol, ol ol, ol ul {
+  margin-bottom: 0;
+}
+
+dl {
+  padding: 0;
+}
+
+dl dt {
+  font-size: 14px;
+  font-weight: bold;
+  font-style: italic;
+  padding: 0;
+  margin: 15px 0 5px;
+}
+
+dl dt:first-child {
+  padding: 0;
+}
+
+dl dt>:first-child {
+  margin-top: 0px;
+}
+
+dl dt>:last-child {
+  margin-bottom: 0px;
+}
+
+dl dd {
+  margin: 0 0 15px;
+  padding: 0 15px;
+}
+
+dl dd>:first-child {
+  margin-top: 0px;
+}
+
+dl dd>:last-child {
+  margin-bottom: 0px;
+}
+
+/* CODE
+=============================================================================*/
+
+pre, code, tt {
+  font-size: 12px;
+  font-family: Consolas, "Liberation Mono", Courier, monospace;
+}
+
+code, tt {
+  margin: 0 0px;
+  padding: 0px 0px;
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px;
+}
+
+pre>code {
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  border: none;
+  background: transparent;
+}
+
+pre {
+  background-color: #f8f8f8;
+  border: 1px solid #ccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+
+pre code, pre tt {
+  background-color: transparent;
+  border: none;
+}
+
+kbd {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-color: #DDDDDD;
+    background-image: linear-gradient(#F1F1F1, #DDDDDD);
+    background-repeat: repeat-x;
+    border-color: #DDDDDD #CCCCCC #CCCCCC #DDDDDD;
+    border-image: none;
+    border-radius: 2px 2px 2px 2px;
+    border-style: solid;
+    border-width: 1px;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    line-height: 10px;
+    padding: 1px 4px;
+}
+
+/* QUOTES
+=============================================================================*/
+
+blockquote {
+  border-left: 4px solid #DDD;
+  padding: 0 15px;
+  color: #777;
+}
+
+blockquote>:first-child {
+  margin-top: 0px;
+}
+
+blockquote>:last-child {
+  margin-bottom: 0px;
+}
+
+/* HORIZONTAL RULES
+=============================================================================*/
+
+hr {
+  clear: both;
+  margin: 15px 0;
+  height: 0px;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  border-bottom: 4px solid #ddd;
+  padding: 0;
+}
+
+/* TABLES
+=============================================================================*/
+
+table th {
+  font-weight: bold;
+}
+
+table th, table td {
+  border: 1px solid #ccc;
+  padding: 6px 13px;
+}
+
+table tr {
+  border-top: 1px solid #ccc;
+  background-color: #fff;
+}
+
+table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+/* IMAGES
+=============================================================================*/
+
+img {
+  max-width: 100%
+}
+</style>
+</head>
+<body>
+<h1>ZNP Host Framework</h1>
+<h2>Introduction</h2>
+<p>This git repository contains the source code for the ZNP POSIX Host Framework and Examples. The project is intended to help developer to develop ZigBee application on a host MCU/MPU connected to the Texas Instruments ZigBee Network Processor (CC253x). The framework offers a C callable / callback API to access the ZigBee Network Processor functionality available as a Binary Remote Procedure Call format over the UART/SPI interface.</p>
+<p>The Framework and Examples utilize a subset of POSIX functions to access OS functionality (Semaphores etc) making it easily portable between OS’s (High Level or Real Time) and HW platforms.</p>
+<p>The Examples currently implemented are:</p>
+<ul>
+<li>CmdLine: A command line example that exposes the ZNP API on the command line, auto complete and help on the available commands is at hand by pressing TAB. This example allows the user to intuitively learn the ZNP interface API as well as ZigBee commands. </li>
+<li>DataSendRecv: A Simple example to send / receive data between nodes in the network.</li>
+<li>NwkTopology: A Simple example to discover the topology of a network that the node is a part of.</li>
+<li>servDesc: A Simple example to discover services of nodes on the network.</li>
+<li>stressTest: A test example used for testing the robustness of the framework.</li>
+</ul>
+<p>The Platforms currently supported are:</p>
+<p>The framework and examples are described in more detail in the UserGuide in the /docs directory of this git.</p>
+<h2>Quick Start Guide</h2>
+<h3>Required HW</h3>
+<p>For the Linux platform only the <a href="https://store.ti.com/CC2538DK-CC2538-Development-Kit-P4532.aspx">CC2538DK</a> is required.</p>
+<p>For the TIRTOS Tiva platform you will need in addition to the <a href="https://store.ti.com/CC2538DK-CC2538-Development-Kit-P4532.aspx">CC2538DK</a> ; a <a href="https://store.ti.com/Tiva-C-LaunchPad.aspx">TIVA-C Launchpad</a> and an <a href="https://store.ti.com/boost-ccemadapter.aspx">EM Booster pack</a> (modified as indicated in the Users Guide).</p>
+<h3>Programming the CC2538EM's with ZNP FW</h3>
+<p>Use the <a href="http://processors.wiki.ti.com/index.php/Download_CCS">SmartRF Programmer 2</a> to program the FW contain in the bin dir of the git repository.</p>
+<p>For the Linux Platform use /bin/cc2538-znp-120-usb-tclk.hex FW. For the TIRTOS/TIVA Platform use the cc2538-znp-120-uart-tclk.hex</p>
+<p>Remember to set the P5 header correctly on the CC2538EM:</p>
+<ul>
+<li>For use with the Linux platform set P5 to VDD -&gt; USB so the CC2538Em is powered from the USB connector.</li>
+<li>For programming and use with the TIRTOS/TIVA Platform set P5 to  VDD -&gt; EM, so it is powered from the RM headers.</li>
+</ul>
+<p>Connect the CC2538EM to the Host:</p>
+<ul>
+<li>For the Linux platform connect the CC2538EM to the Linux machine.</li>
+<li>For the TIRTOS/TIVA platform connect the CC2538EM to the EM Booster Pack and then to the TIRTOS/TIVA Launchpad.</li>
+</ul>
+<h3>Building and running the examples</h3>
+<p>The following describe how the build environment is setup and how one of the examples can be run. For a complete description consult the Users Guide.</p>
+<p>Clone the git </p>
+<pre><code>git clone git://git.ti.com/znp-host-framework/znp-host-framework.git
+</code></pre>
+
+<h4>Linux</h4>
+<p>Change dir to the build directory for one of the examples and build it</p>
+<pre><code>cd znp-posix-framework/examples/cmdLine/build/gnu/
+make
+</code></pre>
+
+<p>Then run the example:</p>
+<pre><code>./cmdLine.bin /dev/ttyACM0
+</code></pre>
+
+<h4>TI RTOS</h4>
+<p>Download CCS v6 from here:
+<a href="http://processors.wiki.ti.com/index.php/Download_CCS">CCS v6</a></p>
+<p>Download TIRTOS for TIVA-C version 2.00.02.36 from here:
+<a href="http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/tirtos/2_00_02_36/exports/tirtos_tivac_setupwin32_2_00_02_36.exe">TIRTOS for TIVA-C version 2.00.02.36 (for Windows)</a></p>
+<p>Other versions of TIRTOS are available <a href="http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/tirtos/index.html">here</a> however these are not yet tested so we recommend that you use the version suggested above.</p>
+<p>Open CCSv6, Import the project through Project-&gt;Import-&gt;Code Composer Studio-&gt;CCS Project. Browse to <base dir>/znp-posix-framework\examples\cmdLine\build\tirtos\ccs</p>
+<p>To build and download the example Right click on the example in the Project Explorer and select Debug As-&gt;Code Composer Debug Session</p>
+<h2>Known Issues and Limitations</h2>
+<ul>
+<li>
+<p>When built from ZStack-Home-1.2.1 ZNP for CC2538 USB the host framework intermittently receives corrupted RPC messages. For this reason hex files from ZStack-Home-1.2.0 are included. The root cause of this issue is currently being investigated.</p>
+</li>
+<li>
+<p>API documentation is not yet released.</p>
+</li>
+<li>
+<p>stressTest Example with ED's results in high level of lost packets. This is because the Ed device sleeps and polls it parent at a default rate, its parent is responsible for buffering any messages until it polls. In this test the Coordinator will send a test message every 200ms, this can cause the parents buffer to overflow and messages to get lost. A possible resolution would be to configure the EndDevice a Always On for this test, but this has not yet been implemented. </p>
+</li>
+</ul>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

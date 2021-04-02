@@ -1,0 +1,13 @@
+/*
+ * mtAppCfg.h
+ *
+ *  Created on: Apr 2, 2021
+ *      Author: Sande
+ */
+
+#ifndef ZNP_HOST_FRAMEWORK_FRAMEWORK_MT_APPCFG_MTAPPCFG_H_
+#define ZNP_HOST_FRAMEWORK_FRAMEWORK_MT_APPCFG_MTAPPCFG_H_
+
+
+
+#endif /* ZNP_HOST_FRAMEWORK_FRAMEWORK_MT_APPCFG_MTAPPCFG_H_ */

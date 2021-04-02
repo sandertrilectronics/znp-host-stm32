@@ -1,0 +1,43 @@
+#
+# Copyright 2016, Han Pengfei. All Rights Reserved.
+# Distributed under the terms of the MIT License.
+#
+
+Import("genv")
+
+env = Environment()
+env["CC"] = genv["CC"]
+env["CXX"] = genv["CXX"]
+env["AS"] = genv["AS"]
+env["AR"] = genv["AR"]
+env["LINK"] = genv["LINK"]
+env["OBJCOPY"] = genv["OBJCOPY"]
+env["NM"] = genv["NM"]
+env["ENV"] = genv["ENV"]
+
+# env["CCFLAGS"] = ["-DRPC_ENABLE_CRTSCTS"]
+
+inc = [
+    ".",
+    "./mt",
+    "./mt/Af",
+    "./mt/Sapi",
+    "./mt/Sys/",
+    "./mt/Zdo",
+    "./platform/gnu",
+    "./rpc",
+]
+
+dst = "znp-framework"
+src = env.Glob("mt/*.c") 
+src += env.Glob("mt/Af/*.c") 
+src += env.Glob("mt/Sapi/*.c")
+src += env.Glob("mt/Sys/*.c")
+src += env.Glob("mt/Zdo/*.c")   
+src += env.Glob("platform/gnu/*.c") 
+src += env.Glob("rpc/*.c") 
+
+lib = []
+
+framework = env.StaticLibrary(target=dst, source=src, LIBS=lib, CPPPATH=inc)
+Return("framework")
