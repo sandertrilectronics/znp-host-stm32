@@ -91,31 +91,29 @@ static uint8_t isr_data;
  *
  * @brief   opens the serial port to the CC253x.
  *
- * @param   devicePath - path to the UART device
- *
  * @return  status
  */
-int32_t rpcTransportOpen(char *_devicePath, uint32_t port) {
+int32_t rpcTransportOpen(void) {
+	// create queues
 	rpc_q_uart_tx = xQueueCreate(256, sizeof(uint8_t));
 	rpc_q_uart_rx = xQueueCreate(256, sizeof(uint8_t));
-	return 0;
+
+	// enable receive interrupt
+	SET_BIT(hlpuart1.Instance->CR1, USART_CR1_RXNEIE);
+
+	// throw an error if one queue couldn't be created
+	return (rpc_q_uart_tx == NULL || rpc_q_uart_rx == NULL) ? -1 : 0;
 }
 
 /*********************************************************************
  * @fn      rpcTransportClose
  *
  * @brief   closes the serial port to the CC253x.
- *
- * @param   fd - file descriptor of the UART device
- *
- * @return  status
  */
 void rpcTransportClose(void) {
+	// delete queues
 	vQueueDelete(rpc_q_uart_tx);
 	vQueueDelete(rpc_q_uart_rx);
-
-	// enable receive interrupt
-	SET_BIT(hlpuart1.Instance->CR1, USART_CR1_RXNEIE);
 }
 
 /*********************************************************************
@@ -136,10 +134,10 @@ void rpcTransportISR(void) {
 		// read the data
 		isr_data = hlpuart1.Instance->RDR & 0xFF;
 		// check for errors
-		if ((isr_stat & (USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE)) == 0) {
-			// Transmit data to queue
-			xQueueSendFromISR(rpc_q_uart_rx, (void*) &isr_data, NULL);
-		}
+		//if ((isr_stat & (USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE)) == 0) {
+		// Transmit data to queue
+		xQueueSendFromISR(rpc_q_uart_rx, (void* ) &isr_data, NULL);
+		//}
 	}
 
 	// check for data to send
@@ -161,14 +159,15 @@ void rpcTransportISR(void) {
  *
  * @brief   Write to the the serial port to the CC253x.
  *
- * @param   fd - file descriptor of the UART device
+ * @param   buf - Buffer for data to be placed in
+ * @param   len - Length of the given buffer
  *
  * @return  status
  */
 void rpcTransportWrite(uint8_t *buf, uint8_t len) {
 	for (uint16_t i = 0; i < len; i++) {
 		// add data to tx queue
-		xQueueSend(rpc_q_uart_tx, (void*) &buf[i], 1);
+		xQueueSend(rpc_q_uart_tx, (void* ) &buf[i], 1);
 
 		// enable receive and transmit interrupt
 		SET_BIT(hlpuart1.Instance->CR1, USART_CR1_RXNEIE);
@@ -181,16 +180,24 @@ void rpcTransportWrite(uint8_t *buf, uint8_t len) {
  *
  * @brief   Reads from the the serial port to the CC253x.
  *
- * @param   fd - file descriptor of the UART device
+ * @param   buf - Buffer for data to be placed in
+ * @param   len - Length of the given buffer
  *
- * @return  status
+ * @return  amount of bytes read
  */
 uint8_t rpcTransportRead(uint8_t *buf, uint8_t len) {
 	int index = 0;
-	while (xQueueReceive(rpc_q_uart_rx, &buf[index], 0) == pdTRUE) {
+
+	// keep waiting for data btyes
+	while (xQueueReceive(rpc_q_uart_rx, &buf[index], 1) == pdTRUE) {
+		// increment position in buffer
 		index++;
+
+		// all data received?
 		if (index == len)
 			break;
 	}
+
+	// return the amount of data read
 	return index;
 }

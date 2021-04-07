@@ -10,6 +10,7 @@
 "Core/Src/usart.o"
 "Core/Startup/startup_stm32l496agix.o"
 "Core/znp-host-framework/framework/mt/Af/mtAf.o"
+"Core/znp-host-framework/framework/mt/AppCfg/mtAppCfg.o"
 "Core/znp-host-framework/framework/mt/Sapi/mtSapi.o"
 "Core/znp-host-framework/framework/mt/Sys/mtSys.o"
 "Core/znp-host-framework/framework/mt/Zdo/mtZdo.o"

@@ -20,6 +20,7 @@ SUBDIRS := \
 Core/Src \
 Core/Startup \
 Core/znp-host-framework/framework/mt/Af \
+Core/znp-host-framework/framework/mt/AppCfg \
 Core/znp-host-framework/framework/mt/Sapi \
 Core/znp-host-framework/framework/mt/Sys \
 Core/znp-host-framework/framework/mt/Zdo \

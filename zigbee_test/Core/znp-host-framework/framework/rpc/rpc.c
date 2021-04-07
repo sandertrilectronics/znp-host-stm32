@@ -122,14 +122,13 @@ static void printRpcMsg(char *preMsg, uint8_t sof, uint8_t len, uint8_t *msg);
  *
  * @return  status
  */
-int32_t rpcOpen(char *_devicePath, uint32_t port) {
+int32_t rpcOpen(void) {
 	int fd;
 
 	// open RPC transport
-	fd = rpcTransportOpen(_devicePath, port);
+	fd = rpcTransportOpen();
 	if (fd < 0) {
-		perror(_devicePath);
-		dbg_print(PRINT_LEVEL_ERROR, "rpcOpen: %s device open failed\n", _devicePath);
+		dbg_print(PRINT_LEVEL_ERROR, "rpcOpen: device open failed\n");
 		return (-1);
 	}
 
@@ -154,7 +153,6 @@ int32_t rpcOpen(char *_devicePath, uint32_t port) {
  * @return  status
  */
 int32_t rpcInitMq(void) {
-
 	llq_open(&rpcLlq);
 	return 0;
 }
@@ -378,7 +376,7 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 	int32_t status = MT_RPC_SUCCESS;
 
 	// block here if SREQ is in progress
-	dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: Blocking on RPC sem\n");
+	//dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: Blocking on RPC sem\n");
 	//sem_wait(&rpcSem);
 	dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: Sending RPC\n");
 
@@ -417,8 +415,7 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 		dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: waiting for SRSP [%02x]\n", expectedSrspCmdId);
 
 		//Wait for the SRSP
-		status = (xSemaphoreTake(srspSem, SRSP_TIMEOUT_MS) == pdTRUE) ? 0 : -1;
-		if (status == -1) {
+		if (xSemaphoreTake(srspSem, SRSP_TIMEOUT_MS) == pdFALSE) {
 			dbg_print(PRINT_LEVEL_WARNING, "rpcSendFrame: SRSP Error - CMD0: 0x%02X CMD1: 0x%02X\n", cmd0, cmd1);
 			status = MT_RPC_ERR_SUBSYSTEM;
 		}

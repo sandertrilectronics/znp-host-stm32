@@ -358,7 +358,7 @@ uint8_t sysResetReq(ResetReqFormat_t *req)
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
 	if (cmd)
 	{
@@ -372,8 +372,6 @@ uint8_t sysResetReq(ResetReqFormat_t *req)
 		{
 			rpcWaitMqClientMsg(50);
 		}
-
-		free(cmd);
 		return status;
 	}
 	else
@@ -571,7 +569,7 @@ uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req)
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4 + req->Len;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
 	if (cmd)
 	{
@@ -595,7 +593,6 @@ uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req)
 			rpcWaitMqClientMsg(50);
 		}
 
-		free(cmd);
 		return status;
 	}
 	else

@@ -34,6 +34,8 @@
 #include "mtSys.h"
 #include "mtZdo.h"
 #include "mtAf.h"
+#include "mtAppCfg.h"
+#include "mtSys.h"
 #include "mtParser.h"
 #include "rpcTransport.h"
 #include "dbgPrint.h"
@@ -74,25 +76,33 @@ void log_print(const char *fmt, ...) {
 	// small local working buffer
 	static char working_buffer[256];
 
-	// take semaphore
-	if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
-		return;
+	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+		// take semaphore
+		if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
+			return;
 
-	// Create vaarg list
-	va_list args;
-	va_start(args, fmt);
+		// Create vaarg list
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(working_buffer, 256, fmt, args);
+		va_end(args);
 
-	// Write string to buffer
-	vsnprintf(working_buffer, 256, fmt, args);
+		// send data
+		HAL_UART_Transmit(&huart2, (char*) working_buffer, strlen(working_buffer), 100);
 
-	// Close vaarg list
-	va_end(args);
+		// Give semaphore back
+		xSemaphoreGive(dbg_sem);
+	}
+	else {
+		// Create vaarg list
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(working_buffer, 256, fmt, args);
+		va_end(args);
 
-	// send data
-	HAL_UART_Transmit(&huart2, (char*) working_buffer, strlen(working_buffer), 100);
-
-	// Give semaphore back
-	xSemaphoreGive(dbg_sem);
+		// send data
+		HAL_UART_Transmit(&huart2, (char*) working_buffer, strlen(working_buffer), 100);
+	}
 }
 
 /********************************************************************
@@ -104,10 +114,11 @@ static uint8_t mtSysResetIndCb(ResetIndFormat_t *msg) {
 }
 
 static uint8_t mtVersionIndCb(VersionSrspFormat_t *msg) {
-	log_print("Version: %d %d %d %d %d %d", msg->MaintRel, msg->MajorRel, msg->MinorRel, msg->Product, msg->TransportRev);
+	log_print("Version: %d %d %d %d %d %d\n", msg->MaintRel, msg->MajorRel, msg->MinorRel, msg->Product, msg->TransportRev);
 	return 0;
 }
 
+static mtSysCb_t mtSysCb = { NULL, NULL, NULL, mtSysResetIndCb, mtVersionIndCb, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 /********************************************************************
  * START OF ZDO CALL BACK FUNCTIONS
  */
@@ -200,38 +211,38 @@ static uint8_t mtZdoSimpleDescRspCb(SimpleDescRspFormat_t *msg) {
 
 static uint8_t mtZdoMgmtLqiRspCb(MgmtLqiRspFormat_t *msg) {
 	/*uint8_t devType = 0;
-	uint8_t devRelation = 0;
-	MgmtLqiReqFormat_t req;
-	if (msg->Status == MT_RPC_SUCCESS) {
-		nodeList[nodeCount].NodeAddr = msg->SrcAddr;
-		nodeList[nodeCount].Type = (msg->SrcAddr == 0 ?
-		DEVICETYPE_COORDINATOR :
-														DEVICETYPE_ROUTER);
-		nodeList[nodeCount].ChildCount = 0;
-		uint32_t i;
-		for (i = 0; i < msg->NeighborLqiListCount; i++) {
-			devType = msg->NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat & 3;
-			devRelation = ((msg->NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat >> 4) & 7);
-			if (devRelation == 1 || devRelation == 3) {
-				uint8_t cCount = nodeList[nodeCount].ChildCount;
-				nodeList[nodeCount].childs[cCount].ChildAddr = msg->NeighborLqiList[i].NetworkAddress;
-				nodeList[nodeCount].childs[cCount].Type = devType;
-				nodeList[nodeCount].ChildCount++;
-				if (devType == DEVICETYPE_ROUTER) {
-					req.DstAddr = msg->NeighborLqiList[i].NetworkAddress;
-					req.StartIndex = 0;
-					zdoMgmtLqiReq(&req);
-				}
-			}
-		}
-		nodeCount++;
+	 uint8_t devRelation = 0;
+	 MgmtLqiReqFormat_t req;
+	 if (msg->Status == MT_RPC_SUCCESS) {
+	 nodeList[nodeCount].NodeAddr = msg->SrcAddr;
+	 nodeList[nodeCount].Type = (msg->SrcAddr == 0 ?
+	 DEVICETYPE_COORDINATOR :
+	 DEVICETYPE_ROUTER);
+	 nodeList[nodeCount].ChildCount = 0;
+	 uint32_t i;
+	 for (i = 0; i < msg->NeighborLqiListCount; i++) {
+	 devType = msg->NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat & 3;
+	 devRelation = ((msg->NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat >> 4) & 7);
+	 if (devRelation == 1 || devRelation == 3) {
+	 uint8_t cCount = nodeList[nodeCount].ChildCount;
+	 nodeList[nodeCount].childs[cCount].ChildAddr = msg->NeighborLqiList[i].NetworkAddress;
+	 nodeList[nodeCount].childs[cCount].Type = devType;
+	 nodeList[nodeCount].ChildCount++;
+	 if (devType == DEVICETYPE_ROUTER) {
+	 req.DstAddr = msg->NeighborLqiList[i].NetworkAddress;
+	 req.StartIndex = 0;
+	 zdoMgmtLqiReq(&req);
+	 }
+	 }
+	 }
+	 nodeCount++;
 
-	}
-	else {
-		log_print("MgmtLqiRsp Status: FAIL 0x%02X\n", msg->Status);
-	}
+	 }
+	 else {
+	 log_print("MgmtLqiRsp Status: FAIL 0x%02X\n", msg->Status);
+	 }
 
-	return msg->Status;*/
+	 return msg->Status;*/
 	return 0;
 }
 
@@ -263,32 +274,6 @@ static uint8_t mtZdoEndDeviceAnnceIndCb(EndDeviceAnnceIndFormat_t *msg) {
 	zdoActiveEpReq(&actReq);
 	return 0;
 }
-
-/********************************************************************
- * AF CALL BACK FUNCTIONS
- */
-
-static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
-	if (msg->Status == MT_RPC_SUCCESS) {
-		log_print("Message transmited Succesfully!\n");
-	}
-	else {
-		log_print("Message failed to transmit\n");
-	}
-	return msg->Status;
-}
-
-static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
-	log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
-	msg->Data[msg->Len] = '\0';
-	log_print("%s\n", (char*) msg->Data);
-	log_print("\nEnter message to send or type CHANGE to change the destination \nor QUIT to exit:\n");
-
-	return 0;
-}
-
-////////////////////////////////////////////////////
-static mtSysCb_t mtSysCb = { NULL, NULL, NULL, mtSysResetIndCb, mtVersionIndCb, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static mtZdoCb_t mtZdoCb = { //
 		NULL,       			// MT_ZDO_NWK_ADDR_RSP
@@ -323,6 +308,28 @@ static mtZdoCb_t mtZdoCb = { //
 				NULL,   //MT_ZDO_STATUS_ERROR_RSP
 				NULL,  //MT_ZDO_MATCH_DESC_RSP_SENT
 				NULL, NULL };
+/********************************************************************
+ * AF CALL BACK FUNCTIONS
+ */
+
+static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
+	if (msg->Status == MT_RPC_SUCCESS) {
+		log_print("Message transmited Succesfully!\n");
+	}
+	else {
+		log_print("Message failed to transmit\n");
+	}
+	return msg->Status;
+}
+
+static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
+	log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
+	msg->Data[msg->Len] = '\0';
+	log_print("%s\n", (char*) msg->Data);
+	log_print("\nEnter message to send or type CHANGE to change the destination \nor QUIT to exit:\n");
+
+	return 0;
+}
 
 static mtAfCb_t mtAfCb = { //
 		mtAfDataConfirmCb,	//MT_AF_DATA_CONFIRM
@@ -331,12 +338,41 @@ static mtAfCb_t mtAfCb = { //
 				NULL,				//MT_AF_DATA_RETRIEVE
 				NULL,			    //MT_AF_REFLECT_ERROR
 		};
+
+////////////////////////////////////////////////////
+
+uint8_t mtAppCfgCommissioningNotifyCb(appCfgCommissioningNotifyFormat_t *msg) {
+	log_print("Commissioning notify\r\nStatus: %02x\r\nMode: %02x\r\nMode: %02x\r\n", msg->status, msg->commissioningMode1, msg->commissioningMode2);
+	return 0;
+}
+
+uint8_t mtAppCfgSetChannelCb(appCfgSetChannelFormat_t *msg) {
+	log_print("Set channel response: %02x (%s)\r\n", msg->success, (msg->success) ? "ERROR" : "SUCCESS");
+	return 0;
+}
+
+uint8_t mtAppCfgCommissioningStartCb(appCfgStartCommissioningStart_t *msg) {
+	log_print("Commissioning start response: %02x (%s)\r\n", msg->success, (msg->success) ? "ERROR" : "SUCCESS");
+	return 0;
+}
+
+static mtAppCfgCb_t mtAppCfgCb = { //
+		mtAppCfgCommissioningNotifyCb, //
+				mtAppCfgSetChannelCb, //
+				mtAppCfgCommissioningStartCb //
+		};
 /////////////////////////////////////////////////
 
 // init coordinator
 // taken from https://sunmaysky.blogspot.com/2017/02/use-ztool-z-stack-30-znp-to-set-up.html
 int znp_init_coordinator(void) {
 	OsalNvWriteFormat_t req;
+	setChannelFormat_t chn;
+	startCommissioningFormat_t strt;
+	ResetReqFormat_t rst;
+
+	vTaskDelay(1000);
+	log_print("----------------------\r\n");
 
 	// write startup option to clear NV when reset
 	req.Id = 0x0003;
@@ -345,8 +381,15 @@ int znp_init_coordinator(void) {
 	req.Value[0] = 0x03;
 	sysOsalNvWrite(&req);
 
+	vTaskDelay(1000);
+	log_print("----------------------\r\n");
+
 	// hard reset
-	sysReset(0x00);
+	rst.Type = 0x00;
+	sysResetReq(&rst);
+
+	vTaskDelay(4000);
+	log_print("----------------------\r\n");
 
 	// Write ZCD_NV_LOGICAL_TYPE to 0 which means coordinator
 	req.Id = 0x0087;
@@ -354,6 +397,29 @@ int znp_init_coordinator(void) {
 	req.Len = 0x01;
 	req.Value[0] = 0x00;
 	sysOsalNvWrite(&req);
+
+	vTaskDelay(1000);
+	log_print("----------------------\r\n");
+
+	// set primary channel to 13
+	chn.primaryChannel = 1;
+	chn.channel = CFG_CHANNEL_0x00002000;
+	appCfgSetChannel(&chn);
+
+	vTaskDelay(1000);
+	log_print("----------------------\r\n");
+
+	// disable secondary channel
+	chn.primaryChannel = 0;
+	chn.channel = CFG_CHANNEL_NONE;
+	appCfgSetChannel(&chn);
+
+	vTaskDelay(1000);
+	log_print("----------------------\r\n");
+
+	// start commissioning using network formation
+	strt.commissioningMode = CFG_COMM_MODE_NWK_FORMATION;
+	appCfgStartCommissioning(&strt);
 
 	//
 	return 0;
@@ -363,37 +429,43 @@ int znp_init_coordinator(void) {
 void vAppTask(void *pvParameters) {
 	log_print("System started\r\n");
 
-	//Register Callbacks MT system callbacks
+	//Register callbacks
 	sysRegisterCallbacks(mtSysCb);
 	zdoRegisterCallbacks(mtZdoCb);
 	afRegisterCallbacks(mtAfCb);
+	appCfgRegisterCallbacks(mtAppCfgCb);
+
+	vTaskDelay(1000);
+
+	if (sysVersion() == 0) {
+		znp_init_coordinator();
+	}
 
 	while (1) {
-		/*if (sysVersion() == 0)
+		/*
+		 if (sysVersion() == 0)
 		 log_print("Ping ok\r\n");
 		 else
-		 log_print("Ping failed\r\n");*/
+		 log_print("Ping failed\r\n");
+		 */
 
-		uint8_t status;
-
-		uint8_t payload[5] = {0};
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_APP_CFG), 0x08, payload, 5);
-
-		if (status == MT_RPC_SUCCESS) {
-			rpcWaitMqClientMsg(50);
-		}
-
-		log_print("State %d\r\n", status);
-
-		vTaskDelay(1000);
+		rpcWaitMqClientMsg(50);
 	}
 }
 
 void vComTask(void *pvParameters) {
+	// init queues
 	rpcInitMq();
-	rpcOpen("nee", 0);
+
+	// initialize serial port
+	rpcOpen();
+
+	// loop
 	while (1) {
+		// keep procesing packets
 		rpcProcess();
+
+		// always a little loop delay
 		vTaskDelay(1);
 	}
 }
@@ -432,8 +504,8 @@ int main(void) {
 	dbg_sem = xSemaphoreCreateBinary();
 	xSemaphoreGive(dbg_sem);
 
-	xTaskCreate(vAppTask, "APP", 256, NULL, tskIDLE_PRIORITY, NULL);
-	xTaskCreate(vComTask, "COM", 256, NULL, tskIDLE_PRIORITY, NULL);
+	xTaskCreate(vAppTask, "APP", 512, NULL, 6, NULL);
+	xTaskCreate(vComTask, "COM", 256, NULL, 5, NULL);
 
 	/* USER CODE END 2 */
 

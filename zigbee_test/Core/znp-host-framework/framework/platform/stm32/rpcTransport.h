@@ -48,12 +48,11 @@ extern "C"
 
 /********************************************************************/
 // ZigBee Soc API
-int32_t rpcTransportOpen(char *devicePath, uint32_t port);
+int32_t rpcTransportOpen(void);
 void rpcTransportClose(void);
 void rpcTransportISR(void);
 void rpcTransportWrite(uint8_t* buf, uint8_t len);
 uint8_t rpcTransportRead(uint8_t* buf, uint8_t len);
-uint8_t rpcTransportPoll(void);
 
 #ifdef __cplusplus
 }

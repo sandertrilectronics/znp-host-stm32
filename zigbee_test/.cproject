@@ -48,6 +48,7 @@
 									<listOptionValue builtIn="false" value="../Core/znp-host-framework/framework/mt/Af"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 									<listOptionValue builtIn="false" value="../Core/znp-host-framework/framework/mt"/>
+									<listOptionValue builtIn="false" value="../Core/znp-host-framework/framework/mt/AppCfg"/>
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32L4xx/Include"/>
 									<listOptionValue builtIn="false" value="../Core/znp-host-framework/framework/mt/Zdo"/>

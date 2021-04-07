@@ -18,6 +18,7 @@ RM := rm -rf
 -include Core/znp-host-framework/framework/mt/Zdo/subdir.mk
 -include Core/znp-host-framework/framework/mt/Sys/subdir.mk
 -include Core/znp-host-framework/framework/mt/Sapi/subdir.mk
+-include Core/znp-host-framework/framework/mt/AppCfg/subdir.mk
 -include Core/znp-host-framework/framework/mt/Af/subdir.mk
 -include Core/znp-host-framework/framework/mt/subdir.mk
 -include Core/Startup/subdir.mk
@@ -51,8 +52,8 @@ zigbee_test.bin \
 all: zigbee_test.elf secondary-outputs
 
 # Tool invocations
-zigbee_test.elf: $(OBJS) $(USER_OBJS) C:\Users\Sande\STM32CubeIDE\workspace_1.3.0\zigbee_test\STM32L496AGIX_FLASH.ld
-	arm-none-eabi-gcc -o "zigbee_test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Sande\STM32CubeIDE\workspace_1.3.0\zigbee_test\STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="zigbee_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+zigbee_test.elf: $(OBJS) $(USER_OBJS) C:\GitHub\znp-host-stm32\zigbee_test\STM32L496AGIX_FLASH.ld
+	arm-none-eabi-gcc -o "zigbee_test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\GitHub\znp-host-stm32\zigbee_test\STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="zigbee_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

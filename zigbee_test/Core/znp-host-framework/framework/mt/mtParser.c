@@ -105,6 +105,11 @@ void mtProcess(uint8_t *rpcBuff, uint8_t rpcLen)
         sapiProcess(rpcBuff, rpcLen);
         break;
 
+    case MT_RPC_SYS_APP_CFG:
+        //process SYS RPC's in the App Cfg module
+        appCfgProcess(rpcBuff, rpcLen);
+        break;
+
     default:
         dbg_print(PRINT_LEVEL_VERBOSE,
                 "mtProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0],
