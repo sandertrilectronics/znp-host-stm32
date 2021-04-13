@@ -50,7 +50,6 @@
 
 #define Q_SIZE					8
 #define Q_FRAME_SIZE			RPC_MAX_LEN
-#define MIN(a, b)				((a < b) ? a : b)
 
 typedef struct {
 	uint8_t data[Q_FRAME_SIZE];

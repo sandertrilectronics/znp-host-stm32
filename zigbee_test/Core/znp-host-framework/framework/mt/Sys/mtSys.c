@@ -77,15 +77,13 @@ static void processResetInd(uint8_t *rpcBuff, uint8_t rpcLen);
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysPing()
-{
+uint8_t sysPing() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 	MT_SYS_PING, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -103,14 +101,11 @@ uint8_t sysPing()
  * @param   rpcLen - Length of incoming buffer.
  *
  */
-static void processPingSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysPingSrsp)
-	{
+static void processPingSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysPingSrsp) {
 		uint8_t msgIdx = 2;
 		PingSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -132,35 +127,23 @@ static void processPingSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysSetExtAddr(SetExtAddrFormat_t *req)
-{
+uint8_t sysSetExtAddr(SetExtAddrFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->ExtAddr, 8);
+	cmInd += 8;
 
-		memcpy((cmd + cmInd), req->ExtAddr, 8);
-		cmInd += 8;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_SET_EXTADDR, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_SET_EXTADDR, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -172,15 +155,13 @@ uint8_t sysSetExtAddr(SetExtAddrFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysGetExtAddr()
-{
+uint8_t sysGetExtAddr() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 	MT_SYS_GET_EXTADDR, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -196,14 +177,11 @@ uint8_t sysGetExtAddr()
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processGetExtAddrSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysGetExtAddrSrsp)
-	{
+static void processGetExtAddrSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysGetExtAddrSrsp) {
 		uint8_t msgIdx = 2;
 		GetExtAddrSrspFormat_t rsp;
-		if (rpcLen < 8)
-		{
+		if (rpcLen < 8) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -227,36 +205,24 @@ static void processGetExtAddrSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysRamRead(RamReadFormat_t *req)
-{
+uint8_t sysRamRead(RamReadFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->Address & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Address >> 8) & 0xFF);
+	cmd[cmInd++] = req->Len;
 
-		cmd[cmInd++] = (uint8_t)(req->Address & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Address >> 8) & 0xFF);
-		cmd[cmInd++] = req->Len;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_RAM_READ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_RAM_READ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -270,14 +236,11 @@ uint8_t sysRamRead(RamReadFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processRamReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysRamReadSrsp)
-	{
+static void processRamReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysRamReadSrsp) {
 		uint8_t msgIdx = 2;
 		RamReadSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -285,11 +248,9 @@ static void processRamReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
 
 		rsp.Status = rpcBuff[msgIdx++];
 		rsp.Len = rpcBuff[msgIdx++];
-		if (rpcLen > 2)
-		{
+		if (rpcLen > 2) {
 			uint32_t i;
-			for (i = 0; i < rsp.Len; i++)
-			{
+			for (i = 0; i < rsp.Len; i++) {
 				rsp.Value[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -306,42 +267,29 @@ static void processRamReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysRamWrite(RamWriteFormat_t *req)
-{
+uint8_t sysRamWrite(RamWriteFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4 + req->Len;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->Address & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Address >> 8) & 0xFF);
-		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++)
-		{
-			cmd[cmInd++] = req->Value[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_RAM_WRITE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->Address & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Address >> 8) & 0xFF);
+	cmd[cmInd++] = req->Len;
+	for (idx = 0; idx < req->Len; idx++) {
+		cmd[cmInd++] = req->Value[idx];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_RAM_WRITE, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -353,29 +301,25 @@ uint8_t sysRamWrite(RamWriteFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysResetReq(ResetReqFormat_t *req)
-{
+uint8_t sysResetReq(ResetReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
 	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	if (cmd) {
 
 		cmd[cmInd++] = req->Type;
 
 		status = rpcSendFrame((MT_RPC_CMD_AREQ | MT_RPC_SYS_SYS),
 		MT_SYS_RESET_REQ, cmd, cmdLen);
 
-		if (status == MT_RPC_SUCCESS)
-		{
+		if (status == MT_RPC_SUCCESS) {
 			rpcWaitMqClientMsg(50);
 		}
 		return status;
 	}
-	else
-	{
+	else {
 		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
 		return 1;
 	}
@@ -392,14 +336,11 @@ uint8_t sysResetReq(ResetReqFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processResetInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysResetInd)
-	{
+static void processResetInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysResetInd) {
 		uint8_t msgIdx = 2;
 		ResetIndFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -426,15 +367,13 @@ static void processResetInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysVersion()
-{
+uint8_t sysVersion() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 	MT_SYS_VERSION, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -452,14 +391,11 @@ uint8_t sysVersion()
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processVersionSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysVersionSrsp)
-	{
+static void processVersionSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysVersionSrsp) {
 		uint8_t msgIdx = 2;
 		VersionSrspFormat_t rsp;
-		if (rpcLen < 5)
-		{
+		if (rpcLen < 5) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -485,36 +421,24 @@ static void processVersionSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalNvRead(OsalNvReadFormat_t *req)
-{
+uint8_t sysOsalNvRead(OsalNvReadFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
+	cmd[cmInd++] = req->Offset;
 
-		cmd[cmInd++] = (uint8_t)(req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Id >> 8) & 0xFF);
-		cmd[cmInd++] = req->Offset;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_NV_READ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_NV_READ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -528,14 +452,11 @@ uint8_t sysOsalNvRead(OsalNvReadFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processOsalNvReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysOsalNvReadSrsp)
-	{
+static void processOsalNvReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysOsalNvReadSrsp) {
 		uint8_t msgIdx = 2;
 		OsalNvReadSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -543,11 +464,9 @@ static void processOsalNvReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
 
 		rsp.Status = rpcBuff[msgIdx++];
 		rsp.Len = rpcBuff[msgIdx++];
-		if (rpcLen > 2)
-		{
+		if (rpcLen > 2) {
 			uint32_t i;
-			for (i = 0; i < rsp.Len; i++)
-			{
+			for (i = 0; i < rsp.Len; i++) {
 				rsp.Value[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -564,39 +483,34 @@ static void processOsalNvReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req)
-{
+uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4 + req->Len;
 	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	if (cmd) {
 
 		int idx;
 
-		cmd[cmInd++] = (uint8_t)(req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Id >> 8) & 0xFF);
+		cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
 		cmd[cmInd++] = req->Offset;
 		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++)
-		{
+		for (idx = 0; idx < req->Len; idx++) {
 			cmd[cmInd++] = req->Value[idx];
 		}
 
 		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 		MT_SYS_OSAL_NV_WRITE, cmd, cmdLen);
 
-		if (status == MT_RPC_SUCCESS)
-		{
+		if (status == MT_RPC_SUCCESS) {
 			rpcWaitMqClientMsg(50);
 		}
 
 		return status;
 	}
-	else
-	{
+	else {
 		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
 		return 1;
 	}
@@ -612,44 +526,31 @@ uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalNvItemInit(OsalNvItemInitFormat_t *req)
-{
+uint8_t sysOsalNvItemInit(OsalNvItemInitFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 5 + req->InitLen;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Id >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->ItemLen & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ItemLen >> 8) & 0xFF);
-		cmd[cmInd++] = req->InitLen;
-		for (idx = 0; idx < req->InitLen; idx++)
-		{
-			cmd[cmInd++] = req->InitData[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_NV_ITEM_INIT, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->ItemLen & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ItemLen >> 8) & 0xFF);
+	cmd[cmInd++] = req->InitLen;
+	for (idx = 0; idx < req->InitLen; idx++) {
+		cmd[cmInd++] = req->InitData[idx];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_NV_ITEM_INIT, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -662,37 +563,25 @@ uint8_t sysOsalNvItemInit(OsalNvItemInitFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalNvDelete(OsalNvDeleteFormat_t *req)
-{
+uint8_t sysOsalNvDelete(OsalNvDeleteFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->ItemLen & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ItemLen >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Id >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->ItemLen & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ItemLen >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_NV_DELETE, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_NV_DELETE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -705,35 +594,23 @@ uint8_t sysOsalNvDelete(OsalNvDeleteFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalNvLength(OsalNvLengthFormat_t *req)
-{
+uint8_t sysOsalNvLength(OsalNvLengthFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Id >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_NV_LENGTH, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_NV_LENGTH, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -747,14 +624,11 @@ uint8_t sysOsalNvLength(OsalNvLengthFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processOsalNvLengthSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysOsalNvLengthSrsp)
-	{
+static void processOsalNvLengthSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysOsalNvLengthSrsp) {
 		uint8_t msgIdx = 2;
 		OsalNvLengthSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -778,36 +652,24 @@ static void processOsalNvLengthSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalStartTimer(OsalStartTimerFormat_t *req)
-{
+uint8_t sysOsalStartTimer(OsalStartTimerFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Id;
+	cmd[cmInd++] = (uint8_t) (req->Timeout & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Timeout >> 8) & 0xFF);
 
-		cmd[cmInd++] = req->Id;
-		cmd[cmInd++] = (uint8_t)(req->Timeout & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Timeout >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_START_TIMER, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_START_TIMER, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -819,34 +681,22 @@ uint8_t sysOsalStartTimer(OsalStartTimerFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysOsalStopTimer(OsalStopTimerFormat_t *req)
-{
+uint8_t sysOsalStopTimer(OsalStopTimerFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Id;
 
-		cmd[cmInd++] = req->Id;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_STOP_TIMER, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_STOP_TIMER, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -859,14 +709,11 @@ uint8_t sysOsalStopTimer(OsalStopTimerFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processOsalTimerExpired(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysOsalTimerExpired)
-	{
+static void processOsalTimerExpired(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysOsalTimerExpired) {
 		uint8_t msgIdx = 2;
 		OsalTimerExpiredFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -887,35 +734,23 @@ static void processOsalTimerExpired(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysStackTune(StackTuneFormat_t *req)
-{
+uint8_t sysStackTune(StackTuneFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Operation;
+	cmd[cmInd++] = req->Value;
 
-		cmd[cmInd++] = req->Operation;
-		cmd[cmInd++] = req->Value;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_STACK_TUNE, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_STACK_TUNE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -929,14 +764,11 @@ uint8_t sysStackTune(StackTuneFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processStackTuneSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysStackTuneSrsp)
-	{
+static void processStackTuneSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysStackTuneSrsp) {
 		uint8_t msgIdx = 2;
 		StackTuneSrspFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -957,35 +789,23 @@ static void processStackTuneSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysAdcRead(AdcReadFormat_t *req)
-{
+uint8_t sysAdcRead(AdcReadFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Channel;
+	cmd[cmInd++] = req->Resolution;
 
-		cmd[cmInd++] = req->Channel;
-		cmd[cmInd++] = req->Resolution;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_ADC_READ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_ADC_READ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -999,14 +819,11 @@ uint8_t sysAdcRead(AdcReadFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processAdcReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysAdcReadSrsp)
-	{
+static void processAdcReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysAdcReadSrsp) {
 		uint8_t msgIdx = 2;
 		AdcReadSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1028,35 +845,23 @@ static void processAdcReadSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysGpio(GpioFormat_t *req)
-{
+uint8_t sysGpio(GpioFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Operation;
+	cmd[cmInd++] = req->Value;
 
-		cmd[cmInd++] = req->Operation;
-		cmd[cmInd++] = req->Value;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_GPIO, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_GPIO, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1070,14 +875,11 @@ uint8_t sysGpio(GpioFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processGpioSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysGpioSrsp)
-	{
+static void processGpioSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysGpioSrsp) {
 		uint8_t msgIdx = 2;
 		GpioSrspFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1098,15 +900,13 @@ static void processGpioSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysRandom()
-{
+uint8_t sysRandom() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 	MT_SYS_RANDOM, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -1124,14 +924,11 @@ uint8_t sysRandom()
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processRandomSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysRandomSrsp)
-	{
+static void processRandomSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysRandomSrsp) {
 		uint8_t msgIdx = 2;
 		RandomSrspFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1155,42 +952,30 @@ static void processRandomSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysSetTime(SetTimeFormat_t *req)
-{
+uint8_t sysSetTime(SetTimeFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->UTCTime, 4);
+	cmInd += 4;
+	cmd[cmInd++] = req->Hour;
+	cmd[cmInd++] = req->Minute;
+	cmd[cmInd++] = req->Second;
+	cmd[cmInd++] = req->Month;
+	cmd[cmInd++] = req->Day;
+	cmd[cmInd++] = (uint8_t) (req->Year & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Year >> 8) & 0xFF);
 
-		memcpy((cmd + cmInd), req->UTCTime, 4);
-		cmInd += 4;
-		cmd[cmInd++] = req->Hour;
-		cmd[cmInd++] = req->Minute;
-		cmd[cmInd++] = req->Second;
-		cmd[cmInd++] = req->Month;
-		cmd[cmInd++] = req->Day;
-		cmd[cmInd++] = (uint8_t)(req->Year & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Year >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_SET_TIME, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_SET_TIME, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1202,15 +987,13 @@ uint8_t sysSetTime(SetTimeFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysGetTime()
-{
+uint8_t sysGetTime() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
 	MT_SYS_GET_TIME, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -1228,14 +1011,11 @@ uint8_t sysGetTime()
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processGetTimeSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysGetTimeSrsp)
-	{
+static void processGetTimeSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysGetTimeSrsp) {
 		uint8_t msgIdx = 2;
 		GetTimeSrspFormat_t rsp;
-		if (rpcLen < 11)
-		{
+		if (rpcLen < 11) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1266,34 +1046,22 @@ static void processGetTimeSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t sysSetTxPower(SetTxPowerFormat_t *req)
-{
+uint8_t sysSetTxPower(SetTxPowerFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->TxPower;
 
-		cmd[cmInd++] = req->TxPower;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_SET_TX_POWER, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_SET_TX_POWER, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1307,14 +1075,11 @@ uint8_t sysSetTxPower(SetTxPowerFormat_t *req)
  * @param   rpcLen - Length of buffer.
  *
  */
-static void processSetTxPowerSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSysCbs.pfnSysSetTxPowerSrsp)
-	{
+static void processSetTxPowerSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSysCbs.pfnSysSetTxPowerSrsp) {
 		uint8_t msgIdx = 2;
 		SetTxPowerSrspFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1334,8 +1099,7 @@ static void processSetTxPowerSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  * @param
  *
  */
-void sysRegisterCallbacks(mtSysCb_t cbs)
-{
+void sysRegisterCallbacks(mtSysCb_t cbs) {
 	memcpy(&mtSysCbs, &cbs, sizeof(mtSysCb_t));
 }
 
@@ -1349,64 +1113,65 @@ void sysRegisterCallbacks(mtSysCb_t cbs)
  *
 
  */
-static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
+static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 	//copies sresp to local buffer
 	memcpy(srspRpcBuff, rpcBuff, rpcLen);
 	//srspRpcLen = rpcLen;
-	switch (rpcBuff[1])
-	{
-	case MT_SYS_PING:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_PING\n");
-		processPingSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_GET_EXTADDR:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GET_EXTADDR\n");
-		processGetExtAddrSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_RAM_READ:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RAM_READ\n");
-		processRamReadSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_VERSION:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_VERSION\n");
-		processVersionSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_OSAL_NV_READ:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_NV_READ\n");
-		processOsalNvReadSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_OSAL_NV_LENGTH:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_NV_LENGTH\n");
-		processOsalNvLengthSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_STACK_TUNE:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_STACK_TUNE\n");
-		processStackTuneSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_ADC_READ:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_ADC_READ\n");
-		processAdcReadSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_GPIO:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GPIO\n");
-		processGpioSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_RANDOM:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RANDOM\n");
-		processRandomSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_GET_TIME:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GET_TIME\n");
-		processGetTimeSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SYS_SET_TX_POWER:
-		dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_SET_TX_POWER\n");
-		processSetTxPowerSrsp(rpcBuff, rpcLen);
-		break;
-	default:
-		dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message\n");
-		break;
+	switch (rpcBuff[1]) {
+		case MT_SYS_PING:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_PING\n");
+			processPingSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_GET_EXTADDR:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GET_EXTADDR\n");
+			processGetExtAddrSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_RAM_READ:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RAM_READ\n");
+			processRamReadSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_VERSION:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_VERSION\n");
+			processVersionSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_OSAL_NV_READ:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_NV_READ\n");
+			processOsalNvReadSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_OSAL_NV_WRITE:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_NV_WRITE\n");
+			break;
+		case MT_SYS_OSAL_NV_LENGTH:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_NV_LENGTH\n");
+			processOsalNvLengthSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_STACK_TUNE:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_STACK_TUNE\n");
+			processStackTuneSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_ADC_READ:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_ADC_READ\n");
+			processAdcReadSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_GPIO:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GPIO\n");
+			processGpioSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_RANDOM:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RANDOM\n");
+			processRandomSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_GET_TIME:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_GET_TIME\n");
+			processGetTimeSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SYS_SET_TX_POWER:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_SET_TX_POWER\n");
+			processSetTxPowerSrsp(rpcBuff, rpcLen);
+			break;
+		default:
+			dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message\n");
+			break;
 	}
 
 }
@@ -1420,35 +1185,27 @@ static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
 
  *************************************************************************************************/
-void sysProcess(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: processing CMD0:%x, CMD1:%x\n",
-	        rpcBuff[0], rpcBuff[1]);
+void sysProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
+	dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: processing CMD0:%x, CMD1:%x\n", rpcBuff[0], rpcBuff[1]);
 
 	//process the synchronous SRSP from SREQ
-	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP)
-	{
+	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP) {
 		processSrsp(rpcBuff, rpcLen);
 	}
-	else
-	{
+	else {
 		//Read CMD1 and processes the specific SREQ
-		switch (rpcBuff[1])
-		{
-		case MT_SYS_RESET_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RESET_IND\n");
-			processResetInd(rpcBuff, rpcLen);
-			break;
-		case MT_SYS_OSAL_TIMER_EXPIRED:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "sysProcess: MT_SYS_OSAL_TIMER_EXPIRED\n");
-			processOsalTimerExpired(rpcBuff, rpcLen);
-			break;
-		default:
-			dbg_print(PRINT_LEVEL_WARNING,
-			        "processRpcSys: CMD0:%x, CMD1:%x, not handled\n",
-			        rpcBuff[0], rpcBuff[1]);
-			break;
+		switch (rpcBuff[1]) {
+			case MT_SYS_RESET_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_RESET_IND\n");
+				processResetInd(rpcBuff, rpcLen);
+				break;
+			case MT_SYS_OSAL_TIMER_EXPIRED:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sysProcess: MT_SYS_OSAL_TIMER_EXPIRED\n");
+				processOsalTimerExpired(rpcBuff, rpcLen);
+				break;
+			default:
+				dbg_print(PRINT_LEVEL_WARNING, "processRpcSys: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0], rpcBuff[1]);
+				break;
 		}
 	}
 }

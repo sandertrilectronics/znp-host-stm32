@@ -84,11 +84,9 @@ static void processReceiveDataInd(uint8_t *rpcBuff, uint8_t rpcLen);
  *
  * @return      none
  */
-uint8_t zbSystemReset(void)
-{
+uint8_t zbSystemReset(void) {
 
-	rpcSendFrame((MT_RPC_CMD_AREQ | MT_RPC_SYS_SAPI), MT_SAPI_SYS_RESET, NULL,
-	        0);
+	rpcSendFrame((MT_RPC_CMD_AREQ | MT_RPC_SYS_SAPI), MT_SAPI_SYS_RESET, NULL, 0);
 
 	return SUCCESS;
 }
@@ -103,56 +101,40 @@ uint8_t zbSystemReset(void)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbAppRegisterReq(AppRegisterReqFormat_t *req)
-{
+uint8_t zbAppRegisterReq(AppRegisterReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
-	uint32_t cmdLen = 9 + (req->InputCommandsNum * 2)
-	        + (req->OutputCommandsNum * 2);
-	uint8_t *cmd = malloc(cmdLen);
+	uint32_t cmdLen = 9 + (req->InputCommandsNum * 2) + (req->OutputCommandsNum * 2);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = req->AppEndpoint;
-		cmd[cmInd++] = (uint8_t)(req->AppProfileId & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->AppProfileId >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->DeviceId & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DeviceId >> 8) & 0xFF);
-		cmd[cmInd++] = req->DeviceVersion;
-		cmd[cmInd++] = req->Unused;
-		cmd[cmInd++] = req->InputCommandsNum;
-		for (idx = 0; idx < req->InputCommandsNum; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->InputCommandsList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)((req->InputCommandsList[idx] >> 8) & 0xFF);
-		}
-		cmd[cmInd++] = req->OutputCommandsNum;
-		for (idx = 0; idx < req->OutputCommandsNum; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->OutputCommandsList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)(
-			        (req->OutputCommandsList[idx] >> 8) & 0xFF);
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_APP_REGISTER_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = req->AppEndpoint;
+	cmd[cmInd++] = (uint8_t) (req->AppProfileId & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->AppProfileId >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->DeviceId & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DeviceId >> 8) & 0xFF);
+	cmd[cmInd++] = req->DeviceVersion;
+	cmd[cmInd++] = req->Unused;
+	cmd[cmInd++] = req->InputCommandsNum;
+	for (idx = 0; idx < req->InputCommandsNum; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->InputCommandsList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->InputCommandsList[idx] >> 8) & 0xFF);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+	cmd[cmInd++] = req->OutputCommandsNum;
+	for (idx = 0; idx < req->OutputCommandsNum; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->OutputCommandsList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->OutputCommandsList[idx] >> 8) & 0xFF);
 	}
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_APP_REGISTER_REQ, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -165,15 +147,13 @@ uint8_t zbAppRegisterReq(AppRegisterReqFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbStartReq()
-{
+uint8_t zbStartReq() {
 	uint8_t status;
 
 	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
 	MT_SAPI_START_REQ, NULL, 0);
 
-	if (status == MT_RPC_SUCCESS)
-	{
+	if (status == MT_RPC_SUCCESS) {
 		rpcWaitMqClientMsg(50);
 	}
 
@@ -190,36 +170,24 @@ uint8_t zbStartReq()
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbPermitJoiningReq(PermitJoiningReqFormat_t *req)
-{
+uint8_t zbPermitJoiningReq(PermitJoiningReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->Destination & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Destination >> 8) & 0xFF);
+	cmd[cmInd++] = req->Timeout;
 
-		cmd[cmInd++] = (uint8_t)(req->Destination & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Destination >> 8) & 0xFF);
-		cmd[cmInd++] = req->Timeout;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_PERMIT_JOINING_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_PERMIT_JOINING_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -231,38 +199,26 @@ uint8_t zbPermitJoiningReq(PermitJoiningReqFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbBindDevice(BindDeviceFormat_t *req)
-{
+uint8_t zbBindDevice(BindDeviceFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Create;
+	cmd[cmInd++] = (uint8_t) (req->CommandId & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->CommandId >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->DstIeee, 8);
+	cmInd += 8;
 
-		cmd[cmInd++] = req->Create;
-		cmd[cmInd++] = (uint8_t)(req->CommandId & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->CommandId >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->DstIeee, 8);
-		cmInd += 8;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_BIND_DEVICE, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_BIND_DEVICE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -275,34 +231,22 @@ uint8_t zbBindDevice(BindDeviceFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbAllowBind(AllowBindFormat_t *req)
-{
+uint8_t zbAllowBind(AllowBindFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Timeout;
 
-		cmd[cmInd++] = req->Timeout;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_ALLOW_BIND, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_ALLOW_BIND, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -316,47 +260,34 @@ uint8_t zbAllowBind(AllowBindFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbSendDataReq(SendDataReqFormat_t *req)
-{
+uint8_t zbSendDataReq(SendDataReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8 + req->Len;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->Destination & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->Destination >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->CommandId & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->CommandId >> 8) & 0xFF);
-		cmd[cmInd++] = req->Handle;
-		cmd[cmInd++] = req->Ack;
-		cmd[cmInd++] = req->Radius;
-		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++)
-		{
-			cmd[cmInd++] = req->Data[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_SEND_DATA_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->Destination & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Destination >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->CommandId & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->CommandId >> 8) & 0xFF);
+	cmd[cmInd++] = req->Handle;
+	cmd[cmInd++] = req->Ack;
+	cmd[cmInd++] = req->Radius;
+	cmd[cmInd++] = req->Len;
+	for (idx = 0; idx < req->Len; idx++) {
+		cmd[cmInd++] = req->Data[idx];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_SEND_DATA_REQ, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -368,35 +299,23 @@ uint8_t zbSendDataReq(SendDataReqFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbFindDeviceReq(FindDeviceReqFormat_t *req)
-{
+uint8_t zbFindDeviceReq(FindDeviceReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->SearchKey, 8);
+	cmInd += 8;
 
-		memcpy((cmd + cmInd), req->SearchKey, 8);
-		cmInd += 8;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_FIND_DEVICE_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_FIND_DEVICE_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -408,41 +327,28 @@ uint8_t zbFindDeviceReq(FindDeviceReqFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbWriteConfiguration(WriteConfigurationFormat_t *req)
-{
+uint8_t zbWriteConfiguration(WriteConfigurationFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3 + req->Len;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = req->ConfigId;
-		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++)
-		{
-			cmd[cmInd++] = req->Value[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_WRITE_CONFIGURATION, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = req->ConfigId;
+	cmd[cmInd++] = req->Len;
+	for (idx = 0; idx < req->Len; idx++) {
+		cmd[cmInd++] = req->Value[idx];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_WRITE_CONFIGURATION, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -454,34 +360,22 @@ uint8_t zbWriteConfiguration(WriteConfigurationFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbGetDeviceInfo(GetDeviceInfoFormat_t *req)
-{
+uint8_t zbGetDeviceInfo(GetDeviceInfoFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Param;
 
-		cmd[cmInd++] = req->Param;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_GET_DEVICE_INFO, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_GET_DEVICE_INFO, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -494,34 +388,22 @@ uint8_t zbGetDeviceInfo(GetDeviceInfoFormat_t *req)
  *
  * @return   status, either Success (0) or Failure (1).
  */
-uint8_t zbReadConfiguration(ReadConfigurationFormat_t *req)
-{
+uint8_t zbReadConfiguration(ReadConfigurationFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->ConfigId;
 
-		cmd[cmInd++] = req->ConfigId;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
+	MT_SAPI_READ_CONFIGURATION, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SAPI),
-		MT_SAPI_READ_CONFIGURATION, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -536,14 +418,11 @@ uint8_t zbReadConfiguration(ReadConfigurationFormat_t *req)
  *
  * @return   
  */
-static void processReadConfigurationSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiReadConfigurationSrsp)
-	{
+static void processReadConfigurationSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiReadConfigurationSrsp) {
 		uint8_t msgIdx = 2;
 		ReadConfigurationSrspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -551,11 +430,9 @@ static void processReadConfigurationSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.Status = rpcBuff[msgIdx++];
 		rsp.ConfigId = rpcBuff[msgIdx++];
 		rsp.Len = rpcBuff[msgIdx++];
-		if (rpcLen > 3)
-		{
+		if (rpcLen > 3) {
 			uint32_t i;
-			for (i = 0; i < rsp.Len; i++)
-			{
+			for (i = 0; i < rsp.Len; i++) {
 				rsp.Value[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -575,22 +452,18 @@ static void processReadConfigurationSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processGetDeviceInfoSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiGetDeviceInfoSrsp)
-	{
+static void processGetDeviceInfoSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiGetDeviceInfoSrsp) {
 		uint8_t msgIdx = 2;
 		GetDeviceInfoSrspFormat_t rsp;
-		if (rpcLen < 9)
-		{
+		if (rpcLen < 9) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
 
 		rsp.Param = rpcBuff[msgIdx++];
 		uint8_t i;
-		for (i = 0; i < 8; i++)
-		{
+		for (i = 0; i < 8; i++) {
 			rsp.Value[i] = rpcBuff[msgIdx++];
 		}
 
@@ -610,14 +483,11 @@ static void processGetDeviceInfoSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processFindDeviceCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiFindDeviceCnf)
-	{
+static void processFindDeviceCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiFindDeviceCnf) {
 		uint8_t msgIdx = 2;
 		FindDeviceCnfFormat_t rsp;
-		if (rpcLen < 11)
-		{
+		if (rpcLen < 11) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -645,14 +515,11 @@ static void processFindDeviceCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processSendDataCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiSendDataCnf)
-	{
+static void processSendDataCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiSendDataCnf) {
 		uint8_t msgIdx = 2;
 		SendDataCnfFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -676,14 +543,11 @@ static void processSendDataCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processReceiveDataInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiReceiveDataInd)
-	{
+static void processReceiveDataInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiReceiveDataInd) {
 		uint8_t msgIdx = 2;
 		ReceiveDataIndFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -694,11 +558,9 @@ static void processReceiveDataInd(uint8_t *rpcBuff, uint8_t rpcLen)
 		msgIdx += 2;
 		rsp.Len = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.Len; i++)
-			{
+			for (i = 0; i < rsp.Len; i++) {
 				rsp.Data[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -717,14 +579,11 @@ static void processReceiveDataInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processAllowBindCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiAllowBindCnf)
-	{
+static void processAllowBindCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiAllowBindCnf) {
 		uint8_t msgIdx = 2;
 		AllowBindCnfFormat_t rsp;
-		if (rpcLen < 2)
-		{
+		if (rpcLen < 2) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -747,14 +606,11 @@ static void processAllowBindCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processBindCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiBindCnf)
-	{
+static void processBindCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiBindCnf) {
 		uint8_t msgIdx = 2;
 		BindCnfFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -778,14 +634,11 @@ static void processBindCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   
  */
-static void processStartCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtSapiCbs.pfnSapiStartCnf)
-	{
+static void processStartCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtSapiCbs.pfnSapiStartCnf) {
 		uint8_t msgIdx = 2;
 		StartCnfFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		//printf("rpcLen = %d\n", rpcLen);
@@ -806,28 +659,22 @@ static void processStartCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
+static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 	//copies sresp to local buffer
 	memcpy(srspRpcBuff, rpcBuff, rpcLen);
 	//srspRpcLen = rpcLen;
-	switch (rpcBuff[1])
-	{
-	case MT_SAPI_READ_CONFIGURATION:
-		dbg_print(PRINT_LEVEL_VERBOSE,
-		        "sapiProcess: MT_SAPI_READ_CONFIGURATION\n");
-		processReadConfigurationSrsp(rpcBuff, rpcLen);
-		break;
-	case MT_SAPI_GET_DEVICE_INFO:
-		dbg_print(PRINT_LEVEL_VERBOSE,
-		        "sapiProcess: MT_SAPI_GET_DEVICE_INFO\n");
-		processGetDeviceInfoSrsp(rpcBuff, rpcLen);
-		break;
-	default:
-		dbg_print(PRINT_LEVEL_INFO,
-		        "processSrsp: unsupported message  [%x:%x]\n", rpcBuff[0],
-		        rpcBuff[1]);
-		break;
+	switch (rpcBuff[1]) {
+		case MT_SAPI_READ_CONFIGURATION:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_READ_CONFIGURATION\n");
+			processReadConfigurationSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_SAPI_GET_DEVICE_INFO:
+			dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_GET_DEVICE_INFO\n");
+			processGetDeviceInfoSrsp(rpcBuff, rpcLen);
+			break;
+		default:
+			dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message  [%x:%x]\n", rpcBuff[0], rpcBuff[1]);
+			break;
 	}
 
 }
@@ -840,55 +687,44 @@ static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return  length of current Rx Buffer
  ***********************************************************************************************/
-void sapiProcess(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: processing CMD0:%x, CMD1:%x\n",
-	        rpcBuff[0], rpcBuff[1]);
+void sapiProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
+	dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: processing CMD0:%x, CMD1:%x\n", rpcBuff[0], rpcBuff[1]);
 
 //process the synchronous SRSP from SREQ
-	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP)
-	{
+	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP) {
 		processSrsp(rpcBuff, rpcLen);
 	}
-	else
-	{
+	else {
 		//Read CMD1 and processes the specific SREQ
-		switch (rpcBuff[1])
-		{
-		case MT_SAPI_FIND_DEVICE_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "sapiProcess: MT_SAPI_FIND_DEVICE_CNF\n");
-			processFindDeviceCnf(rpcBuff, rpcLen);
-			break;
-		case MT_SAPI_SEND_DATA_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "sapiProcess: MT_SAPI_SEND_DATA_CNF\n");
-			processSendDataCnf(rpcBuff, rpcLen);
-			break;
-		case MT_SAPI_RECEIVE_DATA_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "sapiProcess: MT_SAPI_RECEIVE_DATA_IND\n");
-			processReceiveDataInd(rpcBuff, rpcLen);
-			break;
-		case MT_SAPI_ALLOW_BIND_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "sapiProcess: MT_SAPI_ALLOW_BIND_CNF\n");
-			processAllowBindCnf(rpcBuff, rpcLen);
-			break;
-		case MT_SAPI_BIND_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_BIND_CNF\n");
-			processBindCnf(rpcBuff, rpcLen);
-			break;
-		case MT_SAPI_START_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_START_CNF\n");
-			processStartCnf(rpcBuff, rpcLen);
-			break;
+		switch (rpcBuff[1]) {
+			case MT_SAPI_FIND_DEVICE_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_FIND_DEVICE_CNF\n");
+				processFindDeviceCnf(rpcBuff, rpcLen);
+				break;
+			case MT_SAPI_SEND_DATA_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_SEND_DATA_CNF\n");
+				processSendDataCnf(rpcBuff, rpcLen);
+				break;
+			case MT_SAPI_RECEIVE_DATA_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_RECEIVE_DATA_IND\n");
+				processReceiveDataInd(rpcBuff, rpcLen);
+				break;
+			case MT_SAPI_ALLOW_BIND_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_ALLOW_BIND_CNF\n");
+				processAllowBindCnf(rpcBuff, rpcLen);
+				break;
+			case MT_SAPI_BIND_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_BIND_CNF\n");
+				processBindCnf(rpcBuff, rpcLen);
+				break;
+			case MT_SAPI_START_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "sapiProcess: MT_SAPI_START_CNF\n");
+				processStartCnf(rpcBuff, rpcLen);
+				break;
 
-		default:
-			dbg_print(PRINT_LEVEL_INFO,
-			        "sapiProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0],
-			        rpcBuff[1]);
-			break;
+			default:
+				dbg_print(PRINT_LEVEL_INFO, "sapiProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0], rpcBuff[1]);
+				break;
 		}
 	}
 }
@@ -902,8 +738,7 @@ void sapiProcess(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-void sapiRegisterCallbacks(mtSapiCb_t cbs)
-{
+void sapiRegisterCallbacks(mtSapiCb_t cbs) {
 	memcpy(&mtSapiCbs, &cbs, sizeof(mtSapiCb_t));
 }
 

@@ -204,8 +204,6 @@ int32_t rpcWaitMqClientMsg(uint32_t timeout) {
 	uint8_t rpcFrame[RPC_MAX_LEN + 1];
 	int32_t rpcLen;
 
-	dbg_print(PRINT_LEVEL_INFO, "rpcWaitMqClientMsg: timeout=%d\n", timeout);
-
 	rpcLen = llq_timedreceive(&rpcLlq, (char*) rpcFrame, RPC_MAX_LEN + 1, timeout);
 	if (rpcLen != -1) {
 		dbg_print(PRINT_LEVEL_INFO, "rpcWaitMqClientMsg: processing MT[%d]\n", rpcLen);
@@ -213,7 +211,7 @@ int32_t rpcWaitMqClientMsg(uint32_t timeout) {
 		mtProcess(rpcFrame, rpcLen);
 	}
 	else {
-		dbg_print(PRINT_LEVEL_INFO, "rpcWaitMqClientMsg: Timed out [%d] - %s\n", rpcLen, strerror(errno));
+		dbg_print(PRINT_LEVEL_INFO, "rpcWaitMqClientMsg: Timed out [%d]\n", rpcLen);
 		return -1;
 	}
 

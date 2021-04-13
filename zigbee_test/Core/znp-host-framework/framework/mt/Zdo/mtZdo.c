@@ -77,13 +77,11 @@ static void processNwkAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen);
  *
  * @return  none
  */
-static void processStateChange(uint8_t *rpcBuff, uint8_t rpcLen)
-{
+static void processStateChange(uint8_t *rpcBuff, uint8_t rpcLen) {
 
 	uint8_t zdoState = rpcBuff[2];
 	//passes the state to the callback function
-	if (mtZdoCbs.pfnmtZdoStateChangeInd)
-	{
+	if (mtZdoCbs.pfnmtZdoStateChangeInd) {
 		mtZdoCbs.pfnmtZdoStateChangeInd(zdoState);
 	}
 }
@@ -97,38 +95,26 @@ static void processStateChange(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return   status
  */
-uint8_t zdoNwkAddrReq(NwkAddrReqFormat_t *req)
-{
+uint8_t zdoNwkAddrReq(NwkAddrReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 10;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->IEEEAddress, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->ReqType;
+	cmd[cmInd++] = req->StartIndex;
 
-		memcpy((cmd + cmInd), req->IEEEAddress, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->ReqType;
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_NWK_ADDR_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_NWK_ADDR_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -140,38 +126,26 @@ uint8_t zdoNwkAddrReq(NwkAddrReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoIeeeAddrReq(IeeeAddrReqFormat_t *req)
-{
+uint8_t zdoIeeeAddrReq(IeeeAddrReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->ShortAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ShortAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->ReqType;
+	cmd[cmInd++] = req->StartIndex;
 
-		cmd[cmInd++] = (uint8_t)(req->ShortAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ShortAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->ReqType;
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_IEEE_ADDR_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_IEEE_ADDR_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -183,38 +157,26 @@ uint8_t zdoIeeeAddrReq(IeeeAddrReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoNodeDescReq(NodeDescReqFormat_t *req)
-{
+uint8_t zdoNodeDescReq(NodeDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_NODE_DESC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_NODE_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -226,38 +188,26 @@ uint8_t zdoNodeDescReq(NodeDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoPowerDescReq(PowerDescReqFormat_t *req)
-{
+uint8_t zdoPowerDescReq(PowerDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_POWER_DESC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_POWER_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -269,39 +219,27 @@ uint8_t zdoPowerDescReq(PowerDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoSimpleDescReq(SimpleDescReqFormat_t *req)
-{
+uint8_t zdoSimpleDescReq(SimpleDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 5;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
+	cmd[cmInd++] = req->Endpoint;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
-		cmd[cmInd++] = req->Endpoint;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_SIMPLE_DESC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_SIMPLE_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -313,38 +251,25 @@ uint8_t zdoSimpleDescReq(SimpleDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoActiveEpReq(ActiveEpReqFormat_t *req)
-{
+uint8_t zdoActiveEpReq(ActiveEpReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO), MT_ZDO_ACTIVE_EP_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_ACTIVE_EP_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -356,54 +281,39 @@ uint8_t zdoActiveEpReq(ActiveEpReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMatchDescReq(MatchDescReqFormat_t *req)
-{
+uint8_t zdoMatchDescReq(MatchDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8 + (req->NumInClusters * 2) + (req->NumOutClusters * 2);
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
+	int idx;
 
-	if (cmd)
-	{
-
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->ProfileID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ProfileID >> 8) & 0xFF);
-		cmd[cmInd++] = req->NumInClusters;
-		for (idx = 0; idx < req->NumInClusters; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->InClusterList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)((req->InClusterList[idx] >> 8) & 0xFF);
-		}
-		cmd[cmInd++] = req->NumOutClusters;
-		for (idx = 0; idx < req->NumOutClusters; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->OutClusterList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)((req->OutClusterList[idx] >> 8) & 0xFF);
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MATCH_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->ProfileID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ProfileID >> 8) & 0xFF);
+	cmd[cmInd++] = req->NumInClusters;
+	for (idx = 0; idx < req->NumInClusters; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->InClusterList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->InClusterList[idx] >> 8) & 0xFF);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+	cmd[cmInd++] = req->NumOutClusters;
+	for (idx = 0; idx < req->NumOutClusters; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->OutClusterList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->OutClusterList[idx] >> 8) & 0xFF);
 	}
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MATCH_DESC_REQ, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
+	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -415,38 +325,26 @@ uint8_t zdoMatchDescReq(MatchDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoComplexDescReq(ComplexDescReqFormat_t *req)
-{
+uint8_t zdoComplexDescReq(ComplexDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_COMPLEX_DESC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_COMPLEX_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -458,38 +356,26 @@ uint8_t zdoComplexDescReq(ComplexDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoUserDescReq(UserDescReqFormat_t *req)
-{
+uint8_t zdoUserDescReq(UserDescReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_USER_DESC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_USER_DESC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -501,39 +387,27 @@ uint8_t zdoUserDescReq(UserDescReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoDeviceAnnce(DeviceAnnceFormat_t *req)
-{
+uint8_t zdoDeviceAnnce(DeviceAnnceFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->NWKAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NWKAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->IEEEAddr, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->Capabilities;
 
-		cmd[cmInd++] = (uint8_t)(req->NWKAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NWKAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->IEEEAddr, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->Capabilities;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_DEVICE_ANNCE, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_DEVICE_ANNCE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -545,45 +419,32 @@ uint8_t zdoDeviceAnnce(DeviceAnnceFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoUserDescSet(UserDescSetFormat_t *req)
-{
+uint8_t zdoUserDescSet(UserDescSetFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 5 + req->Len;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->NwkAddrOfInterest & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkAddrOfInterest >> 8) & 0xFF);
-		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++)
-		{
-			cmd[cmInd++] = req->UserDescriptor[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_USER_DESC_SET, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->NwkAddrOfInterest & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkAddrOfInterest >> 8) & 0xFF);
+	cmd[cmInd++] = req->Len;
+	for (idx = 0; idx < req->Len; idx++) {
+		cmd[cmInd++] = req->UserDescriptor[idx];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_USER_DESC_SET, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -595,36 +456,24 @@ uint8_t zdoUserDescSet(UserDescSetFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoServerDiscReq(ServerDiscReqFormat_t *req)
-{
+uint8_t zdoServerDiscReq(ServerDiscReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->ServerMask & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ServerMask >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->ServerMask & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ServerMask >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_SERVER_DISC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_SERVER_DISC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -636,57 +485,43 @@ uint8_t zdoServerDiscReq(ServerDiscReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoEndDeviceBindReq(EndDeviceBindReqFormat_t *req)
-{
+uint8_t zdoEndDeviceBindReq(EndDeviceBindReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 17 + (req->NumInClusters * 2) + (req->NumOutClusters * 2);
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	int idx;
 
-		int idx;
-
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = (uint8_t)(req->LocalCoordinator & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->LocalCoordinator >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->CoordinatorIEEE, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->EndPoint;
-		cmd[cmInd++] = (uint8_t)(req->ProfileID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ProfileID >> 8) & 0xFF);
-		cmd[cmInd++] = req->NumInClusters;
-		for (idx = 0; idx < req->NumInClusters; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->InClusterList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)((req->InClusterList[idx] >> 8) & 0xFF);
-		}
-		cmd[cmInd++] = req->NumOutClusters;
-		for (idx = 0; idx < req->NumOutClusters; idx++)
-		{
-			cmd[cmInd++] = (uint8_t)(req->OutClusterList[idx] & 0xFF);
-			cmd[cmInd++] = (uint8_t)((req->OutClusterList[idx] >> 8) & 0xFF);
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_END_DEVICE_BIND_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = (uint8_t) (req->LocalCoordinator & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->LocalCoordinator >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->CoordinatorIEEE, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->EndPoint;
+	cmd[cmInd++] = (uint8_t) (req->ProfileID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ProfileID >> 8) & 0xFF);
+	cmd[cmInd++] = req->NumInClusters;
+	for (idx = 0; idx < req->NumInClusters; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->InClusterList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->InClusterList[idx] >> 8) & 0xFF);
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+	cmd[cmInd++] = req->NumOutClusters;
+	for (idx = 0; idx < req->NumOutClusters; idx++) {
+		cmd[cmInd++] = (uint8_t) (req->OutClusterList[idx] & 0xFF);
+		cmd[cmInd++] = (uint8_t) ((req->OutClusterList[idx] >> 8) & 0xFF);
 	}
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_END_DEVICE_BIND_REQ, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
+	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -698,48 +533,36 @@ uint8_t zdoEndDeviceBindReq(EndDeviceBindReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoBindReq(BindReqFormat_t *req)
-{
+uint8_t zdoBindReq(BindReqFormat_t *req) {
 	uint8_t status;
 	uint8_t addrmd = (req->DstAddrMode == 3 ? 8 : 2);
 	uint8_t cmInd = 0;
 	uint8_t endP = (req->DstAddrMode == 3 ? 1 : 0);
 	uint32_t cmdLen = 14 + addrmd + endP;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->SrcAddress, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->SrcEndpoint;
+	cmd[cmInd++] = (uint8_t) (req->ClusterID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ClusterID >> 8) & 0xFF);
+	cmd[cmInd++] = req->DstAddrMode;
+	memcpy((cmd + cmInd), req->DstAddress, addrmd);
+	cmInd += addrmd;
+	if (endP)
+		cmd[cmInd++] = req->DstEndpoint;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->SrcAddress, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->SrcEndpoint;
-		cmd[cmInd++] = (uint8_t)(req->ClusterID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ClusterID >> 8) & 0xFF);
-		cmd[cmInd++] = req->DstAddrMode;
-		memcpy((cmd + cmInd), req->DstAddress, addrmd);
-		cmInd += addrmd;
-		if (endP)
-			cmd[cmInd++] = req->DstEndpoint;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_BIND_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_BIND_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -751,48 +574,36 @@ uint8_t zdoBindReq(BindReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoUnbindReq(UnbindReqFormat_t *req)
-{
+uint8_t zdoUnbindReq(UnbindReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint8_t addrmd = (req->DstAddrMode == 3 ? 8 : 2);
 	uint8_t endP = (req->DstAddrMode == 3 ? 1 : 0);
 	uint32_t cmdLen = 16;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->SrcAddress, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->SrcEndpoint;
+	cmd[cmInd++] = (uint8_t) (req->ClusterID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ClusterID >> 8) & 0xFF);
+	cmd[cmInd++] = req->DstAddrMode;
+	memcpy((cmd + cmInd), req->DstAddress, addrmd);
+	cmInd += addrmd;
+	if (endP)
+		cmd[cmInd++] = req->DstEndpoint;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->SrcAddress, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->SrcEndpoint;
-		cmd[cmInd++] = (uint8_t)(req->ClusterID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ClusterID >> 8) & 0xFF);
-		cmd[cmInd++] = req->DstAddrMode;
-		memcpy((cmd + cmInd), req->DstAddress, addrmd);
-		cmInd += addrmd;
-		if (endP)
-			cmd[cmInd++] = req->DstEndpoint;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_UNBIND_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_UNBIND_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -804,40 +615,28 @@ uint8_t zdoUnbindReq(UnbindReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtNwkDiscReq(MgmtNwkDiscReqFormat_t *req)
-{
+uint8_t zdoMgmtNwkDiscReq(MgmtNwkDiscReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->ScanChannels, 4);
+	cmInd += 4;
+	cmd[cmInd++] = req->ScanDuration;
+	cmd[cmInd++] = req->StartIndex;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->ScanChannels, 4);
-		cmInd += 4;
-		cmd[cmInd++] = req->ScanDuration;
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_NWK_DISC_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_NWK_DISC_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -849,37 +648,25 @@ uint8_t zdoMgmtNwkDiscReq(MgmtNwkDiscReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtLqiReq(MgmtLqiReqFormat_t *req)
-{
+uint8_t zdoMgmtLqiReq(MgmtLqiReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->StartIndex;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_LQI_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_LQI_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -891,37 +678,25 @@ uint8_t zdoMgmtLqiReq(MgmtLqiReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtRtgReq(MgmtRtgReqFormat_t *req)
-{
+uint8_t zdoMgmtRtgReq(MgmtRtgReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->StartIndex;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_RTG_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_RTG_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -933,37 +708,25 @@ uint8_t zdoMgmtRtgReq(MgmtRtgReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtBindReq(MgmtBindReqFormat_t *req)
-{
+uint8_t zdoMgmtBindReq(MgmtBindReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 3;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->StartIndex;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->StartIndex;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_BIND_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_BIND_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -975,39 +738,27 @@ uint8_t zdoMgmtBindReq(MgmtBindReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtLeaveReq(MgmtLeaveReqFormat_t *req)
-{
+uint8_t zdoMgmtLeaveReq(MgmtLeaveReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->DeviceAddr, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->RemoveChildre_Rejoin;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->DeviceAddr, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->RemoveChildre_Rejoin;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_LEAVE_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_LEAVE_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1019,39 +770,27 @@ uint8_t zdoMgmtLeaveReq(MgmtLeaveReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtDirectJoinReq(MgmtDirectJoinReqFormat_t *req)
-{
+uint8_t zdoMgmtDirectJoinReq(MgmtDirectJoinReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->DeviceAddr, 8);
+	cmInd += 8;
+	cmd[cmInd++] = req->CapInfo;
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->DeviceAddr, 8);
-		cmInd += 8;
-		cmd[cmInd++] = req->CapInfo;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_DIRECT_JOIN_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_DIRECT_JOIN_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1063,39 +802,27 @@ uint8_t zdoMgmtDirectJoinReq(MgmtDirectJoinReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtPermitJoinReq(MgmtPermitJoinReqFormat_t *req)
-{
+uint8_t zdoMgmtPermitJoinReq(MgmtPermitJoinReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 5;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->AddrMode;
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->Duration;
+	cmd[cmInd++] = req->TCSignificance;
 
-		cmd[cmInd++] = req->AddrMode;
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->Duration;
-		cmd[cmInd++] = req->TCSignificance;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_PERMIT_JOIN_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_PERMIT_JOIN_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1107,43 +834,31 @@ uint8_t zdoMgmtPermitJoinReq(MgmtPermitJoinReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMgmtNwkUpdateReq(MgmtNwkUpdateReqFormat_t *req)
-{
+uint8_t zdoMgmtNwkUpdateReq(MgmtNwkUpdateReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 11;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->DstAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->DstAddr >> 8) & 0xFF);
+	cmd[cmInd++] = req->DstAddrMode;
+	memcpy((cmd + cmInd), req->ChannelMask, 4);
+	cmInd += 4;
+	cmd[cmInd++] = req->ScanDuration;
+	cmd[cmInd++] = req->ScanCount;
+	cmd[cmInd++] = (uint8_t) (req->NwkManagerAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->NwkManagerAddr >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->DstAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->DstAddr >> 8) & 0xFF);
-		cmd[cmInd++] = req->DstAddrMode;
-		memcpy((cmd + cmInd), req->ChannelMask, 4);
-		cmInd += 4;
-		cmd[cmInd++] = req->ScanDuration;
-		cmd[cmInd++] = req->ScanCount;
-		cmd[cmInd++] = (uint8_t)(req->NwkManagerAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->NwkManagerAddr >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MGMT_NWK_UPDATE_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MGMT_NWK_UPDATE_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1155,35 +870,23 @@ uint8_t zdoMgmtNwkUpdateReq(MgmtNwkUpdateReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoStartupFromApp(StartupFromAppFormat_t *req)
-{
+uint8_t zdoStartupFromApp(StartupFromAppFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = LO_UINT16(req->StartDelay);
+	cmd[cmInd++] = HI_UINT16(req->StartDelay);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_STARTUP_FROM_APP, cmd, cmdLen);
 
-		cmd[cmInd++] = LO_UINT16(req->StartDelay);
-		cmd[cmInd++] = HI_UINT16(req->StartDelay);
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_STARTUP_FROM_APP, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1195,35 +898,23 @@ uint8_t zdoStartupFromApp(StartupFromAppFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoAutoFindDestination(AutoFindDestinationFormat_t *req)
-{
+uint8_t zdoAutoFindDestination(AutoFindDestinationFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 1;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->Endpoint;
 
-		cmd[cmInd++] = req->Endpoint;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_AUTO_FIND_DESTINATION, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_AUTO_FIND_DESTINATION, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1235,40 +926,28 @@ uint8_t zdoAutoFindDestination(AutoFindDestinationFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoSetLinkKey(SetLinkKeyFormat_t *req)
-{
+uint8_t zdoSetLinkKey(SetLinkKeyFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 26;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->ShortAddr & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ShortAddr >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->IEEEaddr, 8);
+	cmInd += 8;
+	memcpy((cmd + cmInd), req->LinkKeyData, 16);
+	cmInd += 16;
 
-		cmd[cmInd++] = (uint8_t)(req->ShortAddr & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ShortAddr >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->IEEEaddr, 8);
-		cmInd += 8;
-		memcpy((cmd + cmInd), req->LinkKeyData, 16);
-		cmInd += 16;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_SET_LINK_KEY, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_SET_LINK_KEY, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1280,36 +959,24 @@ uint8_t zdoSetLinkKey(SetLinkKeyFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoRemoveLinkKey(RemoveLinkKeyFormat_t *req)
-{
+uint8_t zdoRemoveLinkKey(RemoveLinkKeyFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->IEEEaddr, 8);
+	cmInd += 8;
 
-		memcpy((cmd + cmInd), req->IEEEaddr, 8);
-		cmInd += 8;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_REMOVE_LINK_KEY, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_REMOVE_LINK_KEY, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1321,36 +988,24 @@ uint8_t zdoRemoveLinkKey(RemoveLinkKeyFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoGetLinkKey(GetLinkKeyFormat_t *req)
-{
+uint8_t zdoGetLinkKey(GetLinkKeyFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 8;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->IEEEaddr, 8);
+	cmInd += 8;
 
-		memcpy((cmd + cmInd), req->IEEEaddr, 8);
-		cmInd += 8;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_GET_LINK_KEY, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_GET_LINK_KEY, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1362,37 +1017,25 @@ uint8_t zdoGetLinkKey(GetLinkKeyFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoNwkDiscoveryReq(NwkDiscoveryReqFormat_t *req)
-{
+uint8_t zdoNwkDiscoveryReq(NwkDiscoveryReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 5;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	memcpy((cmd + cmInd), req->ScanChannels, 4);
+	cmInd += 4;
+	cmd[cmInd++] = req->ScanDuration;
 
-		memcpy((cmd + cmInd), req->ScanChannels, 4);
-		cmInd += 4;
-		cmd[cmInd++] = req->ScanDuration;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_NWK_DISCOVERY_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_NWK_DISCOVERY_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1404,43 +1047,31 @@ uint8_t zdoNwkDiscoveryReq(NwkDiscoveryReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoJoinReq(JoinReqFormat_t *req)
-{
+uint8_t zdoJoinReq(JoinReqFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 15;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = req->LogicalChannel;
+	cmd[cmInd++] = (uint8_t) (req->PanID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->PanID >> 8) & 0xFF);
+	memcpy((cmd + cmInd), req->ExtendedPanID, 8);
+	cmInd += 8;
+	cmd[cmInd++] = (uint8_t) (req->ChosenParent & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ChosenParent >> 8) & 0xFF);
+	cmd[cmInd++] = req->ParentDepth;
+	cmd[cmInd++] = req->StackProfile;
 
-		cmd[cmInd++] = req->LogicalChannel;
-		cmd[cmInd++] = (uint8_t)(req->PanID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->PanID >> 8) & 0xFF);
-		memcpy((cmd + cmInd), req->ExtendedPanID, 8);
-		cmInd += 8;
-		cmd[cmInd++] = (uint8_t)(req->ChosenParent & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ChosenParent >> 8) & 0xFF);
-		cmd[cmInd++] = req->ParentDepth;
-		cmd[cmInd++] = req->StackProfile;
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_JOIN_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_JOIN_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1452,36 +1083,24 @@ uint8_t zdoJoinReq(JoinReqFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMsgCbRegister(MsgCbRegisterFormat_t *req)
-{
+uint8_t zdoMsgCbRegister(MsgCbRegisterFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->ClusterID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ClusterID >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->ClusterID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ClusterID >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MSG_CB_REGISTER, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MSG_CB_REGISTER, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1493,36 +1112,24 @@ uint8_t zdoMsgCbRegister(MsgCbRegisterFormat_t *req)
  *
  * @return   status
  */
-uint8_t zdoMsgCbRemove(MsgCbRemoveFormat_t *req)
-{
+uint8_t zdoMsgCbRemove(MsgCbRemoveFormat_t *req) {
 	uint8_t status;
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[cmInd++] = (uint8_t) (req->ClusterID & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->ClusterID >> 8) & 0xFF);
 
-		cmd[cmInd++] = (uint8_t)(req->ClusterID & 0xFF);
-		cmd[cmInd++] = (uint8_t)((req->ClusterID >> 8) & 0xFF);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_MSG_CB_REMOVE, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_MSG_CB_REMOVE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS)
-		{
-			rpcWaitMqClientMsg(50);
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*********************************************************************
@@ -1535,14 +1142,11 @@ uint8_t zdoMsgCbRemove(MsgCbRemoveFormat_t *req)
  *
  * @return
  */
-static void processGetLinkKey(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoGetLinkKey)
-	{
+static void processGetLinkKey(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoGetLinkKey) {
 		uint8_t msgIdx = 2;
 		GetLinkKeySrspFormat_t rsp;
-		if (rpcLen < 25)
-		{
+		if (rpcLen < 25) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1570,14 +1174,11 @@ static void processGetLinkKey(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processNwkAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoNwkAddrRsp)
-	{
+static void processNwkAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoNwkAddrRsp) {
 		uint8_t msgIdx = 2;
 		NwkAddrRspFormat_t rsp;
-		if (rpcLen < 13)
-		{
+		if (rpcLen < 13) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1592,13 +1193,10 @@ static void processNwkAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		msgIdx += 2;
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.NumAssocDev = rpcBuff[msgIdx++];
-		if (rpcLen > 13)
-		{
+		if (rpcLen > 13) {
 			uint32_t i;
-			for (i = 0; i < rsp.NumAssocDev; i++)
-			{
-				rsp.AssocDevList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.NumAssocDev; i++) {
+				rsp.AssocDevList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 			}
 		}
@@ -1616,14 +1214,11 @@ static void processNwkAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processIeeeAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoIeeeAddrRsp)
-	{
+static void processIeeeAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoIeeeAddrRsp) {
 		uint8_t msgIdx = 2;
 		IeeeAddrRspFormat_t rsp;
-		if (rpcLen < 13)
-		{
+		if (rpcLen < 13) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1639,13 +1234,10 @@ static void processIeeeAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.NumAssocDev = rpcBuff[msgIdx++];
 		rsp.StartIndex = (rsp.NumAssocDev == 0 ? 0 : rsp.StartIndex);
-		if (rpcLen > 13)
-		{
+		if (rpcLen > 13) {
 			uint32_t i;
-			for (i = 0; i < rsp.NumAssocDev; i++)
-			{
-				rsp.AssocDevList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.NumAssocDev; i++) {
+				rsp.AssocDevList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 			}
 		}
@@ -1663,14 +1255,11 @@ static void processIeeeAddrRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processNodeDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoNodeDescRsp)
-	{
+static void processNodeDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoNodeDescRsp) {
 		uint8_t msgIdx = 2;
 		NodeDescRspFormat_t rsp;
-		if (rpcLen < 18)
-		{
+		if (rpcLen < 18) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1684,17 +1273,14 @@ static void processNodeDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.LoTy_ComDescAv_UsrDesAv = rpcBuff[msgIdx++];
 		rsp.APSFlg_FrqBnd = rpcBuff[msgIdx++];
 		rsp.MACCapFlg = rpcBuff[msgIdx++];
-		rsp.ManufacturerCode = BUILD_UINT16(rpcBuff[msgIdx],
-		        rpcBuff[msgIdx + 1]);
+		rsp.ManufacturerCode = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.MaxBufferSize = rpcBuff[msgIdx++];
-		rsp.MaxTransferSize = BUILD_UINT16(rpcBuff[msgIdx],
-		        rpcBuff[msgIdx + 1]);
+		rsp.MaxTransferSize = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.ServerMask = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
-		rsp.MaxOutTransferSize = BUILD_UINT16(rpcBuff[msgIdx],
-		        rpcBuff[msgIdx + 1]);
+		rsp.MaxOutTransferSize = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.DescriptorCapabilities = rpcBuff[msgIdx++];
 
@@ -1712,14 +1298,11 @@ static void processNodeDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processPowerDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoPowerDescRsp)
-	{
+static void processPowerDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoPowerDescRsp) {
 		uint8_t msgIdx = 2;
 		PowerDescRspFormat_t rsp;
-		if (rpcLen < 7)
-		{
+		if (rpcLen < 7) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1747,14 +1330,11 @@ static void processPowerDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processSimpleDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoSimpleDescRsp)
-	{
+static void processSimpleDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoSimpleDescRsp) {
 		uint8_t msgIdx = 2;
 		SimpleDescRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1766,8 +1346,7 @@ static void processSimpleDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.Len = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			rsp.Endpoint = rpcBuff[msgIdx++];
 			rsp.ProfileID = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 			msgIdx += 2;
@@ -1776,17 +1355,13 @@ static void processSimpleDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 			rsp.DeviceVersion = rpcBuff[msgIdx++];
 			rsp.NumInClusters = rpcBuff[msgIdx++];
 			uint32_t i;
-			for (i = 0; i < rsp.NumInClusters; i++)
-			{
-				rsp.InClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.NumInClusters; i++) {
+				rsp.InClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 			}
 			rsp.NumOutClusters = rpcBuff[msgIdx++];
-			for (i = 0; i < rsp.NumOutClusters; i++)
-			{
-				rsp.OutClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.NumOutClusters; i++) {
+				rsp.OutClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 			}
 		}
@@ -1804,14 +1379,11 @@ static void processSimpleDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processActiveEpRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoActiveEpRsp)
-	{
+static void processActiveEpRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoActiveEpRsp) {
 		uint8_t msgIdx = 2;
 		ActiveEpRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1823,11 +1395,9 @@ static void processActiveEpRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.ActiveEPCount = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.ActiveEPCount; i++)
-			{
+			for (i = 0; i < rsp.ActiveEPCount; i++) {
 				rsp.ActiveEPList[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -1845,14 +1415,11 @@ static void processActiveEpRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMatchDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMatchDescRsp)
-	{
+static void processMatchDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMatchDescRsp) {
 		uint8_t msgIdx = 2;
 		MatchDescRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1864,11 +1431,9 @@ static void processMatchDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.MatchLength = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.MatchLength; i++)
-			{
+			for (i = 0; i < rsp.MatchLength; i++) {
 				rsp.MatchList[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -1886,14 +1451,11 @@ static void processMatchDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processComplexDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoComplexDescRsp)
-	{
+static void processComplexDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoComplexDescRsp) {
 		uint8_t msgIdx = 2;
 		ComplexDescRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1905,11 +1467,9 @@ static void processComplexDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.ComplexLength = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.ComplexLength; i++)
-			{
+			for (i = 0; i < rsp.ComplexLength; i++) {
 				rsp.ComplexList[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -1927,14 +1487,11 @@ static void processComplexDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processUserDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoUserDescRsp)
-	{
+static void processUserDescRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoUserDescRsp) {
 		uint8_t msgIdx = 2;
 		UserDescRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -1946,11 +1503,9 @@ static void processUserDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
 		rsp.Len = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.Len; i++)
-			{
+			for (i = 0; i < rsp.Len; i++) {
 				rsp.CUserDescriptor[i] = rpcBuff[msgIdx++];
 			}
 		}
@@ -1968,14 +1523,11 @@ static void processUserDescRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processUserDescConf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoUserDescConf)
-	{
+static void processUserDescConf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoUserDescConf) {
 		uint8_t msgIdx = 2;
 		UserDescConfFormat_t rsp;
-		if (rpcLen < 5)
-		{
+		if (rpcLen < 5) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2001,14 +1553,11 @@ static void processUserDescConf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processServerDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoServerDiscRsp)
-	{
+static void processServerDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoServerDiscRsp) {
 		uint8_t msgIdx = 2;
 		ServerDiscRspFormat_t rsp;
-		if (rpcLen < 5)
-		{
+		if (rpcLen < 5) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2034,14 +1583,11 @@ static void processServerDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processEndDeviceBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoEndDeviceBindRsp)
-	{
+static void processEndDeviceBindRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoEndDeviceBindRsp) {
 		uint8_t msgIdx = 2;
 		EndDeviceBindRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2065,14 +1611,11 @@ static void processEndDeviceBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoBindRsp)
-	{
+static void processBindRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoBindRsp) {
 		uint8_t msgIdx = 2;
 		BindRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2096,14 +1639,11 @@ static void processBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processUnbindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoUnbindRsp)
-	{
+static void processUnbindRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoUnbindRsp) {
 		uint8_t msgIdx = 2;
 		UnbindRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2127,14 +1667,11 @@ static void processUnbindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtNwkDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtNwkDiscRsp)
-	{
+static void processMgmtNwkDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtNwkDiscRsp) {
 		uint8_t msgIdx = 2;
 		MgmtNwkDiscRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2146,16 +1683,13 @@ static void processMgmtNwkDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NetworkCount = rpcBuff[msgIdx++];
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.NetworkListCount = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.NetworkListCount; i++)
-			{
+			for (i = 0; i < rsp.NetworkListCount; i++) {
 				rsp.NetworkList[i].PanID = 0;
 				uint8_t ind;
 				for (ind = 0; ind < 8; ind++)
-					rsp.NetworkList[i].PanID |= ((uint64_t) rpcBuff[msgIdx++])
-					        << (ind * 8);
+					rsp.NetworkList[i].PanID |= ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
 				rsp.NetworkList[i].LogicalChannel = rpcBuff[msgIdx++];
 				rsp.NetworkList[i].StackProf_ZigVer = rpcBuff[msgIdx++];
 				rsp.NetworkList[i].BeacOrd_SupFramOrd = rpcBuff[msgIdx++];
@@ -2176,14 +1710,11 @@ static void processMgmtNwkDiscRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtLqiRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtLqiRsp)
-	{
+static void processMgmtLqiRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtLqiRsp) {
 		uint8_t msgIdx = 2;
 		MgmtLqiRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2195,26 +1726,20 @@ static void processMgmtLqiRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.NeighborTableEntries = rpcBuff[msgIdx++];
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.NeighborLqiListCount = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.NeighborLqiListCount; i++)
-			{
+			for (i = 0; i < rsp.NeighborLqiListCount; i++) {
 
 				rsp.NeighborLqiList[i].ExtendedPanID = 0;
 				uint8_t ind;
 				for (ind = 0; ind < 8; ind++)
-					rsp.NeighborLqiList[i].ExtendedPanID |=
-					        ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
+					rsp.NeighborLqiList[i].ExtendedPanID |= ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
 				rsp.NeighborLqiList[i].ExtendedAddress = 0;
 				for (ind = 0; ind < 8; ind++)
-					rsp.NeighborLqiList[i].ExtendedAddress |=
-					        ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
-				rsp.NeighborLqiList[i].NetworkAddress = BUILD_UINT16(
-				        rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
+					rsp.NeighborLqiList[i].ExtendedAddress |= ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
+				rsp.NeighborLqiList[i].NetworkAddress = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
-				rsp.NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat =
-				        rpcBuff[msgIdx++];
+				rsp.NeighborLqiList[i].DevTyp_RxOnWhenIdle_Relat = rpcBuff[msgIdx++];
 				rsp.NeighborLqiList[i].PermitJoining = rpcBuff[msgIdx++];
 				rsp.NeighborLqiList[i].Depth = rpcBuff[msgIdx++];
 				rsp.NeighborLqiList[i].LQI = rpcBuff[msgIdx++];
@@ -2236,14 +1761,11 @@ static void processMgmtLqiRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtRtgRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtRtgRsp)
-	{
+static void processMgmtRtgRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtRtgRsp) {
 		uint8_t msgIdx = 2;
 		MgmtRtgRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2255,17 +1777,13 @@ static void processMgmtRtgRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.RoutingTableEntries = rpcBuff[msgIdx++];
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.RoutingTableListCount = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.RoutingTableListCount; i++)
-			{
-				rsp.RoutingTableList[i].DstAddr = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.RoutingTableListCount; i++) {
+				rsp.RoutingTableList[i].DstAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 				rsp.RoutingTableList[i].Status = rpcBuff[msgIdx++];
-				rsp.RoutingTableList[i].NextHop = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+				rsp.RoutingTableList[i].NextHop = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 			}
 		}
@@ -2283,14 +1801,11 @@ static void processMgmtRtgRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtBindRsp)
-	{
+static void processMgmtBindRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtBindRsp) {
 		uint8_t msgIdx = 2;
 		MgmtBindRspFormat_t rsp;
-		if (rpcLen < 6)
-		{
+		if (rpcLen < 6) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2302,23 +1817,19 @@ static void processMgmtBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.BindingTableEntries = rpcBuff[msgIdx++];
 		rsp.StartIndex = rpcBuff[msgIdx++];
 		rsp.BindingTableListCount = rpcBuff[msgIdx++];
-		if (rpcLen > 6)
-		{
+		if (rpcLen > 6) {
 			uint32_t i;
-			for (i = 0; i < rsp.BindingTableListCount; i++)
-			{
+			for (i = 0; i < rsp.BindingTableListCount; i++) {
 				rsp.BindingTableList[i].SrcIEEEAddr = 0;
 				uint8_t i;
 				for (i = 0; i < 8; i++)
-					rsp.BindingTableList[i].SrcIEEEAddr |=
-					        ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
+					rsp.BindingTableList[i].SrcIEEEAddr |= ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
 				rsp.BindingTableList[i].SrcEndpoint = rpcBuff[msgIdx++];
 				rsp.BindingTableList[i].ClusterID = rpcBuff[msgIdx++];
 				rsp.BindingTableList[i].DstAddrMode = rpcBuff[msgIdx++];
 				rsp.BindingTableList[i].DstIEEEAddr = 0;
 				for (i = 0; i < 8; i++)
-					rsp.BindingTableList[i].DstIEEEAddr |=
-					        ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
+					rsp.BindingTableList[i].DstIEEEAddr |= ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
 				rsp.BindingTableList[i].DstEndpoint = rpcBuff[msgIdx++];
 			}
 		}
@@ -2336,14 +1847,11 @@ static void processMgmtBindRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtLeaveRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtLeaveRsp)
-	{
+static void processMgmtLeaveRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtLeaveRsp) {
 		uint8_t msgIdx = 2;
 		MgmtLeaveRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2367,14 +1875,11 @@ static void processMgmtLeaveRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtDirectJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtDirectJoinRsp)
-	{
+static void processMgmtDirectJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtDirectJoinRsp) {
 		uint8_t msgIdx = 2;
 		MgmtDirectJoinRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2398,14 +1903,11 @@ static void processMgmtDirectJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMgmtPermitJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMgmtPermitJoinRsp)
-	{
+static void processMgmtPermitJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMgmtPermitJoinRsp) {
 		uint8_t msgIdx = 2;
 		MgmtPermitJoinRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2429,14 +1931,11 @@ static void processMgmtPermitJoinRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processEndDeviceAnnceInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoEndDeviceAnnceInd)
-	{
+static void processEndDeviceAnnceInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoEndDeviceAnnceInd) {
 		uint8_t msgIdx = 2;
 		EndDeviceAnnceIndFormat_t rsp;
-		if (rpcLen < 13)
-		{
+		if (rpcLen < 13) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2466,14 +1965,11 @@ static void processEndDeviceAnnceInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMatchDescRspSent(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMatchDescRspSent)
-	{
+static void processMatchDescRspSent(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMatchDescRspSent) {
 		uint8_t msgIdx = 2;
 		MatchDescRspSentFormat_t rsp;
-		if (rpcLen < 4)
-		{
+		if (rpcLen < 4) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2483,17 +1979,13 @@ static void processMatchDescRspSent(uint8_t *rpcBuff, uint8_t rpcLen)
 		msgIdx += 2;
 		rsp.NumInClusters = rpcBuff[msgIdx++];
 		uint32_t i;
-		for (i = 0; i < rsp.NumInClusters; i++)
-		{
-			rsp.InClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-			        rpcBuff[msgIdx + 1]);
+		for (i = 0; i < rsp.NumInClusters; i++) {
+			rsp.InClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 			msgIdx += 2;
 		}
 		rsp.NumOutClusters = rpcBuff[msgIdx++];
-		for (i = 0; i < rsp.NumOutClusters; i++)
-		{
-			rsp.OutClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-			        rpcBuff[msgIdx + 1]);
+		for (i = 0; i < rsp.NumOutClusters; i++) {
+			rsp.OutClusterList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 			msgIdx += 2;
 		}
 
@@ -2511,14 +2003,11 @@ static void processMatchDescRspSent(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processStatusErrorRsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoStatusErrorRsp)
-	{
+static void processStatusErrorRsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoStatusErrorRsp) {
 		uint8_t msgIdx = 2;
 		StatusErrorRspFormat_t rsp;
-		if (rpcLen < 3)
-		{
+		if (rpcLen < 3) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2542,14 +2031,11 @@ static void processStatusErrorRsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processSrcRtgInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoSrcRtgInd)
-	{
+static void processSrcRtgInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoSrcRtgInd) {
 		uint8_t msgIdx = 2;
 		SrcRtgIndFormat_t rsp;
-		if (rpcLen < 4)
-		{
+		if (rpcLen < 4) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2559,10 +2045,8 @@ static void processSrcRtgInd(uint8_t *rpcBuff, uint8_t rpcLen)
 		msgIdx += 2;
 		rsp.RelayCount = rpcBuff[msgIdx++];
 		uint32_t i;
-		for (i = 0; i < rsp.RelayCount; i++)
-		{
-			rsp.RelayList[i] = BUILD_UINT16(rpcBuff[msgIdx],
-			        rpcBuff[msgIdx + 1]);
+		for (i = 0; i < rsp.RelayCount; i++) {
+			rsp.RelayList[i] = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 			msgIdx += 2;
 		}
 
@@ -2579,29 +2063,22 @@ static void processSrcRtgInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processBeaconNotifyInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoBeaconNotifyInd)
-	{
+static void processBeaconNotifyInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoBeaconNotifyInd) {
 		uint8_t msgIdx = 2;
 		BeaconNotifyIndFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		printf("rpcLen = %d\n", rpcLen);
 
 		rsp.BeaconCount = rpcBuff[msgIdx++];
-		if (rpcLen > 1)
-		{
+		if (rpcLen > 1) {
 			uint32_t i;
-			for (i = 0; i < rsp.BeaconCount; i++)
-			{
-				rsp.BeaconList[i].SrcAddr = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+			for (i = 0; i < rsp.BeaconCount; i++) {
+				rsp.BeaconList[i].SrcAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
-				rsp.BeaconList[i].PanId = BUILD_UINT16(rpcBuff[msgIdx],
-				        rpcBuff[msgIdx + 1]);
+				rsp.BeaconList[i].PanId = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 				msgIdx += 2;
 				rsp.BeaconList[i].LogicalChannel = rpcBuff[msgIdx++];
 				rsp.BeaconList[i].PermitJoining = rpcBuff[msgIdx++];
@@ -2616,8 +2093,7 @@ static void processBeaconNotifyInd(uint8_t *rpcBuff, uint8_t rpcLen)
 				rsp.BeaconList[i].ExtendedPanId = 0;
 				uint8_t ind;
 				for (ind = 0; ind < 8; ind++)
-					rsp.BeaconList[i].ExtendedPanId |=
-					        ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
+					rsp.BeaconList[i].ExtendedPanId |= ((uint64_t) rpcBuff[msgIdx++]) << (ind * 8);
 
 			}
 		}
@@ -2635,14 +2111,11 @@ static void processBeaconNotifyInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processJoinCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoJoinCnf)
-	{
+static void processJoinCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoJoinCnf) {
 		uint8_t msgIdx = 2;
 		JoinCnfFormat_t rsp;
-		if (rpcLen < 5)
-		{
+		if (rpcLen < 5) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		printf("rpcLen = %d\n", rpcLen);
@@ -2667,14 +2140,11 @@ static void processJoinCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processNwkDiscoveryCnf(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoNwkDiscoveryCnf)
-	{
+static void processNwkDiscoveryCnf(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoNwkDiscoveryCnf) {
 		uint8_t msgIdx = 2;
 		NwkDiscoveryCnfFormat_t rsp;
-		if (rpcLen < 1)
-		{
+		if (rpcLen < 1) {
 			printf("MT_RPC_ERR_LENGTH\n");
 		}
 		printf("rpcLen = %d\n", rpcLen);
@@ -2694,14 +2164,11 @@ static void processNwkDiscoveryCnf(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processLeaveInd(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoLeaveInd)
-	{
+static void processLeaveInd(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoLeaveInd) {
 		uint8_t msgIdx = 2;
 		LeaveIndFormat_t rsp;
-		if (rpcLen < 13)
-		{
+		if (rpcLen < 13) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2709,11 +2176,10 @@ static void processLeaveInd(uint8_t *rpcBuff, uint8_t rpcLen)
 
 		rsp.SrcAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		msgIdx += 2;
-		
-		rsp.ExtAddr = 0;		
+
+		rsp.ExtAddr = 0;
 		uint8_t i;
-		for (i = 0; i < 8; i++)
-		{
+		for (i = 0; i < 8; i++) {
 			rsp.ExtAddr |= ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
 		}
 		rsp.Request = rpcBuff[msgIdx++];
@@ -2734,14 +2200,11 @@ static void processLeaveInd(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processMsgCbIncoming(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	if (mtZdoCbs.pfnZdoMsgCbIncoming)
-	{
+static void processMsgCbIncoming(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtZdoCbs.pfnZdoMsgCbIncoming) {
 		uint8_t msgIdx = 2;
 		MsgCbIncomingFormat_t rsp;
-		if (rpcLen < 9)
-		{
+		if (rpcLen < 9) {
 			printf("MT_RPC_ERR_LENGTH\n");
 
 		}
@@ -2760,14 +2223,12 @@ static void processMsgCbIncoming(uint8_t *rpcBuff, uint8_t rpcLen)
 		rsp.Status = rpcBuff[msgIdx++];
 		rsp.ExtAddr = 0;
 		uint8_t i;
-		for (i = 0; i < 8; i++)
-		{
+		for (i = 0; i < 8; i++) {
 			rsp.ExtAddr |= ((uint64_t) rpcBuff[msgIdx++]) << (i * 8);
 		}
 		rsp.NwkAddr = BUILD_UINT16(rpcBuff[msgIdx], rpcBuff[msgIdx + 1]);
 		rsp.NotUsed = rpcBuff[msgIdx];
-		
-		
+
 		mtZdoCbs.pfnZdoMsgCbIncoming(&rsp);
 	}
 }
@@ -2781,41 +2242,29 @@ static void processMsgCbIncoming(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return  none
  */
-uint8_t zdoInit(void)
-{
+uint8_t zdoInit(void) {
 	uint8_t status;
 	// build the buffer
 	uint32_t cmdLen = 2;
-	uint8_t *cmd = malloc(cmdLen);
+	uint8_t cmd[cmdLen];
 
-	if (cmd)
-	{
+	cmd[0] = LO_UINT16(STARTDELAY);
+	cmd[1] = HI_UINT16(STARTDELAY);
 
-		cmd[0] = LO_UINT16(STARTDELAY);
-		cmd[1] = HI_UINT16(STARTDELAY);
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
+	MT_ZDO_STARTUP_FROM_APP, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_ZDO),
-		MT_ZDO_STARTUP_FROM_APP, cmd, cmdLen);
+	//read the SREQ from the queue
+	if (status == MT_RPC_SUCCESS) {
+		//rpcSendFrame will block on the SRSP's, which will be
+		//pushed to the front of the queue
+		rpcWaitMqClientMsg(50);
 
-		//read the SREQ from the queue
-		if (status == MT_RPC_SUCCESS)
-		{
-			//rpcSendFrame will block on the SRSP's, which will be
-			//pushed to the front of the queue
-			rpcWaitMqClientMsg(50);
-
-			//set status to status of srsp
-			status = srspRpcBuff[2];
-		}
-
-		free(cmd);
-		return status;
+		//set status to status of srsp
+		status = srspRpcBuff[2];
 	}
-	else
-	{
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+
+	return status;
 }
 
 /*************************************************************************************************
@@ -2827,174 +2276,144 @@ uint8_t zdoInit(void)
  *
  * @return  length of current Rx Buffer
  ***********************************************************************************************/
-void zdoProcess(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-	dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: processing CMD0:%x, CMD1:%x\n",
-	        rpcBuff[0], rpcBuff[1]);
+void zdoProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
+	dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: processing CMD0:%x, CMD1:%x\n", rpcBuff[0], rpcBuff[1]);
 
 	//process the synchronous SRSP from SREQ
-	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP)
-	{
+	if ((rpcBuff[0] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP) {
 		processSrsp(rpcBuff, rpcLen);
 	}
-	else
-	{
+	else {
 		//Read CMD1 and processes the specific SREQ
-		switch (rpcBuff[1])
-		{
-		case MT_ZDO_STATE_CHANGE_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_STATE_CHANGE_IND\n");
-			processStateChange(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_NWK_ADDR_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_NWK_ADDR_RSP\n");
-			processNwkAddrRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_IEEE_ADDR_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_IEEE_ADDR_RSP\n");
-			processIeeeAddrRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_NODE_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_NODE_DESC_RSP\n");
-			processNodeDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_POWER_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_POWER_DESC_RSP\n");
-			processPowerDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_SIMPLE_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_SIMPLE_DESC_RSP\n");
-			processSimpleDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_ACTIVE_EP_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_ACTIVE_EP_RSP\n");
-			processActiveEpRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MATCH_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MATCH_DESC_RSP\n");
-			processMatchDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_COMPLEX_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_COMPLEX_DESC_RSP\n");
-			processComplexDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_USER_DESC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_USER_DESC_RSP\n");
-			processUserDescRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_USER_DESC_CONF:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_USER_DESC_CONF\n");
-			processUserDescConf(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_SERVER_DISC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_SERVER_DISC_RSP\n");
-			processServerDiscRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_END_DEVICE_BIND_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_END_DEVICE_BIND_RSP\n");
-			processEndDeviceBindRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_BIND_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_BIND_RSP\n");
-			processBindRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_UNBIND_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_UNBIND_RSP\n");
-			processUnbindRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_NWK_DISC_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MGMT_NWK_DISC_RSP\n");
-			processMgmtNwkDiscRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_LQI_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_LQI_RSP\n");
-			processMgmtLqiRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_RTG_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_RTG_RSP\n");
-			processMgmtRtgRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_BIND_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MGMT_BIND_RSP\n");
-			processMgmtBindRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_LEAVE_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MGMT_LEAVE_RSP\n");
-			processMgmtLeaveRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_DIRECT_JOIN_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MGMT_DIRECT_JOIN_RSP\n");
-			processMgmtDirectJoinRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MGMT_PERMIT_JOIN_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MGMT_PERMIT_JOIN_RSP\n");
-			processMgmtPermitJoinRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_END_DEVICE_ANNCE_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_END_DEVICE_ANNCE_IND\n");
-			processEndDeviceAnnceInd(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MATCH_DESC_RSP_SENT:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MATCH_DESC_RSP_SENT\n");
-			processMatchDescRspSent(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_STATUS_ERROR_RSP:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_STATUS_ERROR_RSP\n");
-			processStatusErrorRsp(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_SRC_RTG_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_SRC_RTG_IND\n");
-			processSrcRtgInd(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_BEACON_NOTIFY_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_BEACON_NOTIFY_IND\n");
-			processBeaconNotifyInd(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_JOIN_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_JOIN_CNF\n");
-			processJoinCnf(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_NWK_DISCOVERY_CNF:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_NWK_DISCOVERY_CNF\n");
-			processNwkDiscoveryCnf(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_LEAVE_IND:
-			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_LEAVE_IND\n");
-			processLeaveInd(rpcBuff, rpcLen);
-			break;
-		case MT_ZDO_MSG_CB_INCOMING:
-			dbg_print(PRINT_LEVEL_VERBOSE,
-			        "zdoProcess: MT_ZDO_MSG_CB_INCOMING\n");
-			processMsgCbIncoming(rpcBuff, rpcLen);
-			break;
+		switch (rpcBuff[1]) {
+			case MT_ZDO_STATE_CHANGE_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_STATE_CHANGE_IND\n");
+				processStateChange(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_NWK_ADDR_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_NWK_ADDR_RSP\n");
+				processNwkAddrRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_IEEE_ADDR_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_IEEE_ADDR_RSP\n");
+				processIeeeAddrRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_NODE_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_NODE_DESC_RSP\n");
+				processNodeDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_POWER_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_POWER_DESC_RSP\n");
+				processPowerDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_SIMPLE_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_SIMPLE_DESC_RSP\n");
+				processSimpleDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_ACTIVE_EP_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_ACTIVE_EP_RSP\n");
+				processActiveEpRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MATCH_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MATCH_DESC_RSP\n");
+				processMatchDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_COMPLEX_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_COMPLEX_DESC_RSP\n");
+				processComplexDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_USER_DESC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_USER_DESC_RSP\n");
+				processUserDescRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_USER_DESC_CONF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_USER_DESC_CONF\n");
+				processUserDescConf(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_SERVER_DISC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_SERVER_DISC_RSP\n");
+				processServerDiscRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_END_DEVICE_BIND_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_END_DEVICE_BIND_RSP\n");
+				processEndDeviceBindRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_BIND_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_BIND_RSP\n");
+				processBindRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_UNBIND_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_UNBIND_RSP\n");
+				processUnbindRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_NWK_DISC_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_NWK_DISC_RSP\n");
+				processMgmtNwkDiscRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_LQI_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_LQI_RSP\n");
+				processMgmtLqiRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_RTG_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_RTG_RSP\n");
+				processMgmtRtgRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_BIND_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_BIND_RSP\n");
+				processMgmtBindRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_LEAVE_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_LEAVE_RSP\n");
+				processMgmtLeaveRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_DIRECT_JOIN_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_DIRECT_JOIN_RSP\n");
+				processMgmtDirectJoinRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MGMT_PERMIT_JOIN_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MGMT_PERMIT_JOIN_RSP\n");
+				processMgmtPermitJoinRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_END_DEVICE_ANNCE_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_END_DEVICE_ANNCE_IND\n");
+				processEndDeviceAnnceInd(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MATCH_DESC_RSP_SENT:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MATCH_DESC_RSP_SENT\n");
+				processMatchDescRspSent(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_STATUS_ERROR_RSP:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_STATUS_ERROR_RSP\n");
+				processStatusErrorRsp(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_SRC_RTG_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_SRC_RTG_IND\n");
+				processSrcRtgInd(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_BEACON_NOTIFY_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_BEACON_NOTIFY_IND\n");
+				processBeaconNotifyInd(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_JOIN_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_JOIN_CNF\n");
+				processJoinCnf(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_NWK_DISCOVERY_CNF:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_NWK_DISCOVERY_CNF\n");
+				processNwkDiscoveryCnf(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_LEAVE_IND:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_LEAVE_IND\n");
+				processLeaveInd(rpcBuff, rpcLen);
+				break;
+			case MT_ZDO_MSG_CB_INCOMING:
+				dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_MSG_CB_INCOMING\n");
+				processMsgCbIncoming(rpcBuff, rpcLen);
+				break;
 
-		default:
-			dbg_print(PRINT_LEVEL_WARNING,
-			        "zdoProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0],
-			        rpcBuff[1]);
-			break;
+			default:
+				dbg_print(PRINT_LEVEL_WARNING, "zdoProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0], rpcBuff[1]);
+				break;
 		}
 	}
 }
@@ -3008,20 +2427,18 @@ void zdoProcess(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
-{
+static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 	//copies sresp to local buffer
 	memcpy(srspRpcBuff, rpcBuff, rpcLen);
 	//srspRpcLen = rpcLen;
-	switch (rpcBuff[1])
-	{
-	case MT_ZDO_GET_LINK_KEY:
-		dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_GET_LINK_KEY\n");
-		processGetLinkKey(rpcBuff, rpcLen);
-		break;
-	default:
-		dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message\n");
-		break;
+	switch (rpcBuff[1]) {
+		case MT_ZDO_GET_LINK_KEY:
+			dbg_print(PRINT_LEVEL_VERBOSE, "zdoProcess: MT_ZDO_GET_LINK_KEY\n");
+			processGetLinkKey(rpcBuff, rpcLen);
+			break;
+		default:
+			dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message\n");
+			break;
 	}
 }
 
@@ -3034,8 +2451,7 @@ static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen)
  *
  * @return
  */
-void zdoRegisterCallbacks(mtZdoCb_t cbs)
-{
+void zdoRegisterCallbacks(mtZdoCb_t cbs) {
 	memcpy(&mtZdoCbs, &cbs, sizeof(mtZdoCb_t));
 }
 

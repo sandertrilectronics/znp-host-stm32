@@ -79,7 +79,7 @@
 void dbg_print(int print_level, const char *fmt, ...) {
 	static char working_buffer[256];
 
-	if (print_level > PRINT_LEVEL) {
+	if (print_level >= PRINT_LEVEL) {
 		return;
 	}
 	else {
