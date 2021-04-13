@@ -1,9 +1,11 @@
 # znp-host-stm32
-This project contains the znp-host-framework as found in:
+An example project for interfacing with the ZNP firmware on a CC2530 Zigbee Module from TI using an STM32 microcontroller.
+
+This project expands the znp-host-framework as found in:
 
 https://github.com/pengphei/znp-host-framework
 
-The framework has been ported to the STM32 and some extra missing commands are added. The goal of this repository is to support all commands, just as Z-Tool on the PC would, but executable from the STM32 processor (or any other embedded device).
+The framework has been ported to the STM32 and some extra missing commands are added. A lot of other code that was not meant for an embedde device was removed (file IO, malloc, etc). The goal of this repository is to support all commands in the ZNP firmware, just as Z-Tool on the PC would, but executable from the STM32 processor (or any other embedded device).
 
 # Software Buildup
 The project uses FreeRTOS to manage two tasks: 
