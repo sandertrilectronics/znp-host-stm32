@@ -23,6 +23,7 @@ Core/znp-host-framework/framework/mt/Af \
 Core/znp-host-framework/framework/mt/AppCfg \
 Core/znp-host-framework/framework/mt/Sapi \
 Core/znp-host-framework/framework/mt/Sys \
+Core/znp-host-framework/framework/mt/Util \
 Core/znp-host-framework/framework/mt/Zdo \
 Core/znp-host-framework/framework/mt \
 Core/znp-host-framework/framework/platform/stm32 \

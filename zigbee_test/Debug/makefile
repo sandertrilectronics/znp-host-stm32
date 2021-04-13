@@ -16,6 +16,7 @@ RM := rm -rf
 -include Core/znp-host-framework/framework/rpc/subdir.mk
 -include Core/znp-host-framework/framework/platform/stm32/subdir.mk
 -include Core/znp-host-framework/framework/mt/Zdo/subdir.mk
+-include Core/znp-host-framework/framework/mt/Util/subdir.mk
 -include Core/znp-host-framework/framework/mt/Sys/subdir.mk
 -include Core/znp-host-framework/framework/mt/Sapi/subdir.mk
 -include Core/znp-host-framework/framework/mt/AppCfg/subdir.mk

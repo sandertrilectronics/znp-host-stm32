@@ -123,24 +123,20 @@ static void printRpcMsg(char *preMsg, uint8_t sof, uint8_t len, uint8_t *msg);
  * @return  status
  */
 int32_t rpcOpen(void) {
-	int fd;
-
-	// open RPC transport
-	fd = rpcTransportOpen();
-	if (fd < 0) {
+	// open RPC transport (create communication queues)
+	if (rpcTransportOpen() < 0) {
 		dbg_print(PRINT_LEVEL_ERROR, "rpcOpen: device open failed\n");
 		return (-1);
 	}
 
-	//sem_init(&rpcSem, 0, 1); // initialize mutex to 1 - binary semaphore
-	//sem_init(&srspSem, 0, 0); // initialize mutex to 0 - binary semaphore
-
+	// create binary semaphore
 	srspSem = xSemaphoreCreateBinary();
-	//xSemaphoreGive(srspSem);
 
+	// send force run command to CC2530
 	rpcForceRun();
 
-	return fd;
+	// return result
+	return 0;
 }
 
 /*********************************************************************
@@ -248,11 +244,11 @@ int32_t rpcProcess(void) {
 	uint8_t retryAttempts = 0, len, rpcBuff[RPC_MAX_LEN];
 	uint8_t fcs;
 
-#ifndef HAL_UART_IP //No SOF for IP	//read first byte and check it is a SOF
+	//read first byte and check it is a SOF
 	bytesRead = rpcTransportRead(&sofByte, 1);
 
+	// did we recieve SOF?
 	if ((sofByte == MT_RPC_SOF) && (bytesRead == 1))
-#endif
 	{
 		// clear retry counter
 		retryAttempts = 0;
@@ -264,12 +260,8 @@ int32_t rpcProcess(void) {
 			len = rpcLen;
 			rpcBuff[0] = rpcLen;
 
-#ifdef HAL_UART_IP //No FCS for IP			//allocating RPC payload (+ cmd0, cmd1)
-			rpcLen += RPC_CMD0_FIELD_LEN + RPC_CMD1_FIELD_LEN;
-#else
 			//allocating RPC payload (+ cmd0, cmd1 and fcs)
 			rpcLen += RPC_CMD0_FIELD_LEN + RPC_CMD1_FIELD_LEN + RPC_UART_FCS_LEN;
-#endif
 
 			//non blocking read, so we need to wait for the rpc to be read
 			rpcBuffIdx = 1;
@@ -352,10 +344,8 @@ int32_t rpcProcess(void) {
 			dbg_print(PRINT_LEVEL_WARNING, "rpcProcess: Len Not read [%x]\n", bytesRead);
 		}
 	}
-	else {
-		//dbg_print(PRINT_LEVEL_WARNING, "rpcProcess: No valid Start Of Frame found [%x:%x]\n", sofByte, bytesRead);
-	}
 
+	// nothing received yet
 	return -1;
 }
 
@@ -374,8 +364,6 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 	int32_t status = MT_RPC_SUCCESS;
 
 	// block here if SREQ is in progress
-	//dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: Blocking on RPC sem\n");
-	//sem_wait(&rpcSem);
 	dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: Sending RPC\n");
 
 	// fill in header bytes
@@ -397,22 +385,18 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 	// calculate FCS field
 	buf[payload_len + RPC_UART_HDR_LEN] = calcFcs(&buf[RPC_UART_FRAME_START_IDX], payload_len + RPC_HDR_LEN);
 
-#ifdef HAL_UART_IP
-	// No SOF or FCS
-	rpcTransportWrite(buf+1, payload_len + RPC_HDR_LEN + RPC_UART_FCS_LEN);
-#else
 	// send out RPC  message
 	rpcTransportWrite(buf, payload_len + RPC_UART_HDR_LEN + RPC_UART_FCS_LEN);
-#endif
 
 	// print out message to be sent
 	printRpcMsg("SOC OUT -->", buf[0], payload_len, &buf[2]);
 
 	// wait for SRSP if necessary
 	if ((cmd0 & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SREQ) {
+		// feedback
 		dbg_print(PRINT_LEVEL_INFO, "rpcSendFrame: waiting for SRSP [%02x]\n", expectedSrspCmdId);
 
-		//Wait for the SRSP
+		// Wait for the SRSP
 		if (xSemaphoreTake(srspSem, SRSP_TIMEOUT_MS) == pdFALSE) {
 			dbg_print(PRINT_LEVEL_WARNING, "rpcSendFrame: SRSP Error - CMD0: 0x%02X CMD1: 0x%02X\n", cmd0, cmd1);
 			status = MT_RPC_ERR_SUBSYSTEM;
@@ -426,9 +410,7 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 		expectedSrspCmdId = 0xFF;
 	}
 
-	//Unlock RPC sem
-	//sem_post(&rpcSem);
-
+	// return found status
 	return status;
 }
 

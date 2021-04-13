@@ -133,18 +133,16 @@ void rpcTransportISR(void) {
 	if (isr_stat & USART_ISR_RXNE) {
 		// read the data
 		isr_data = hlpuart1.Instance->RDR & 0xFF;
-		// check for errors
-		//if ((isr_stat & (USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE)) == 0) {
+
 		// Transmit data to queue
 		xQueueSendFromISR(rpc_q_uart_rx, (void* ) &isr_data, NULL);
-		//}
 	}
 
 	// check for data to send
 	if (isr_stat & USART_ISR_TC) {
 		// grab data from fifo
 		if (xQueueReceiveFromISR(rpc_q_uart_tx, (void*) &isr_data, NULL) == pdFALSE) {
-			// end of transmission
+			// end of transmission, disable TX empty interrupt
 			CLEAR_BIT(hlpuart1.Instance->CR1, USART_CR1_TCIE);
 		}
 		else {
@@ -169,7 +167,7 @@ void rpcTransportWrite(uint8_t *buf, uint8_t len) {
 		// add data to tx queue
 		xQueueSend(rpc_q_uart_tx, (void* ) &buf[i], 1);
 
-		// enable receive and transmit interrupt
+		// enable "RX Not Empty" and "TX Empty" interrupt
 		SET_BIT(hlpuart1.Instance->CR1, USART_CR1_RXNEIE);
 		SET_BIT(hlpuart1.Instance->CR1, USART_CR1_TCIE);
 	}

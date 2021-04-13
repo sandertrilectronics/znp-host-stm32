@@ -43,7 +43,9 @@ The project is build using STM32Cube IDE. This IDE is supplied by ST Microelectr
 https://www.st.com/en/development-tools/stm32cubeide.html
 
 In the IDE the project can be imported by selecting:  
+
 ```file -> Open Projects From Filesystem...```  
+
 and browsing to the root directory of the project.
 
 # Hardware

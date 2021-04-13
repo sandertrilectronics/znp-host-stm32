@@ -13,6 +13,7 @@
 "Core/znp-host-framework/framework/mt/AppCfg/mtAppCfg.o"
 "Core/znp-host-framework/framework/mt/Sapi/mtSapi.o"
 "Core/znp-host-framework/framework/mt/Sys/mtSys.o"
+"Core/znp-host-framework/framework/mt/Util/mtUtil.o"
 "Core/znp-host-framework/framework/mt/Zdo/mtZdo.o"
 "Core/znp-host-framework/framework/mt/mtParser.o"
 "Core/znp-host-framework/framework/platform/stm32/dbgPrint.o"
