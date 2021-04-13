@@ -82,15 +82,6 @@ void log_print(const char *fmt, ...) {
 		if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
 			return;
 
-		// print tick
-		/*snprintf(working_buffer, 256, "%lu\t", HAL_GetTick());
-
-		 // append parameters
-		 va_list args;
-		 va_start(args, fmt);
-		 vsnprintf(&working_buffer[strlen(working_buffer)], 256 - strlen(working_buffer), fmt, args);
-		 va_end(args);*/
-
 		// append parameters
 		va_list args;
 		va_start(args, fmt);
@@ -296,38 +287,40 @@ static uint8_t mtZdoEndDeviceAnnceIndCb(EndDeviceAnnceIndFormat_t *msg) {
 }
 
 static mtZdoCb_t mtZdoCb = { //
-		NULL,       			// MT_ZDO_NWK_ADDR_RSP
-				NULL,      				// MT_ZDO_IEEE_ADDR_RSP
-				NULL,      				// MT_ZDO_NODE_DESC_RSP
-				NULL,     				// MT_ZDO_POWER_DESC_RSP
-				mtZdoSimpleDescRspCb,   // MT_ZDO_SIMPLE_DESC_RSP
-				mtZdoActiveEpRspCb,     // MT_ZDO_ACTIVE_EP_RSP
-				NULL,     				// MT_ZDO_MATCH_DESC_RSP
-				NULL,   				// MT_ZDO_COMPLEX_DESC_RSP
-				NULL,      				// MT_ZDO_USER_DESC_RSP
-				NULL,     				// MT_ZDO_USER_DESC_CONF
-				NULL,    				// MT_ZDO_SERVER_DISC_RSP
-				NULL, 					// MT_ZDO_END_DEVICE_BIND_RSP
-				NULL,          			// MT_ZDO_BIND_RSP
-				NULL,       			// MT_ZDO_UNBIND_RSP
-				NULL,   				// MT_ZDO_MGMT_NWK_DISC_RSP
-				mtZdoMgmtLqiRspCb,      // MT_ZDO_MGMT_LQI_RSP
-				NULL,       			// MT_ZDO_MGMT_RTG_RSP
-				NULL,      				// MT_ZDO_MGMT_BIND_RSP
-				NULL,     // MT_ZDO_MGMT_LEAVE_RSP
-				NULL,     // MT_ZDO_MGMT_DIRECT_JOIN_RSP
-				NULL,     // MT_ZDO_MGMT_PERMIT_JOIN_RSP
-				mtZdoStateChangeIndCb,   // MT_ZDO_STATE_CHANGE_IND
-				mtZdoEndDeviceAnnceIndCb,   // MT_ZDO_END_DEVICE_ANNCE_IND
-				NULL,        // MT_ZDO_SRC_RTG_IND
-				NULL,	 //MT_ZDO_BEACON_NOTIFY_IND
-				NULL,			 //MT_ZDO_JOIN_CNF
-				NULL,	 //MT_ZDO_NWK_DISCOVERY_CNF
-				NULL,                    // MT_ZDO_CONCENTRATOR_IND_CB
-				NULL,         // MT_ZDO_LEAVE_IND
-				NULL,   //MT_ZDO_STATUS_ERROR_RSP
-				NULL,  //MT_ZDO_MATCH_DESC_RSP_SENT
-				NULL, NULL };
+		NULL,       						// MT_ZDO_NWK_ADDR_RSP
+				NULL,      					// MT_ZDO_IEEE_ADDR_RSP
+				NULL,      					// MT_ZDO_NODE_DESC_RSP
+				NULL,     					// MT_ZDO_POWER_DESC_RSP
+				mtZdoSimpleDescRspCb,   	// MT_ZDO_SIMPLE_DESC_RSP
+				mtZdoActiveEpRspCb,     	// MT_ZDO_ACTIVE_EP_RSP
+				NULL,     					// MT_ZDO_MATCH_DESC_RSP
+				NULL,   					// MT_ZDO_COMPLEX_DESC_RSP
+				NULL,      					// MT_ZDO_USER_DESC_RSP
+				NULL,     					// MT_ZDO_USER_DESC_CONF
+				NULL,    					// MT_ZDO_SERVER_DISC_RSP
+				NULL, 						// MT_ZDO_END_DEVICE_BIND_RSP
+				NULL,          				// MT_ZDO_BIND_RSP
+				NULL,       				// MT_ZDO_UNBIND_RSP
+				NULL,   					// MT_ZDO_MGMT_NWK_DISC_RSP
+				mtZdoMgmtLqiRspCb,      	// MT_ZDO_MGMT_LQI_RSP
+				NULL,       				// MT_ZDO_MGMT_RTG_RSP
+				NULL,      					// MT_ZDO_MGMT_BIND_RSP
+				NULL,     					// MT_ZDO_MGMT_LEAVE_RSP
+				NULL,     					// MT_ZDO_MGMT_DIRECT_JOIN_RSP
+				NULL,     					// MT_ZDO_MGMT_PERMIT_JOIN_RSP
+				mtZdoStateChangeIndCb,   	// MT_ZDO_STATE_CHANGE_IND
+				mtZdoEndDeviceAnnceIndCb,	// MT_ZDO_END_DEVICE_ANNCE_IND
+				NULL,        				// MT_ZDO_SRC_RTG_IND
+				NULL,						// MT_ZDO_BEACON_NOTIFY_IND
+				NULL,						// MT_ZDO_JOIN_CNF
+				NULL,	 					// MT_ZDO_NWK_DISCOVERY_CNF
+				NULL,                   	// MT_ZDO_CONCENTRATOR_IND_CB
+				NULL,       				// MT_ZDO_LEAVE_IND
+				NULL,   					// MT_ZDO_STATUS_ERROR_RSP
+				NULL, 						// MT_ZDO_MATCH_DESC_RSP_SENT
+				NULL,						//
+				NULL 						//
+				};
 /********************************************************************
  * AF CALL BACK FUNCTIONS
  */
@@ -345,18 +338,17 @@ static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
 static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
 	log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
 	for (uint8_t i = 0; i < msg->Len; i++)
-		log_print("%02x ", msg->Data[i]);
-	log_print("\nEnter message to send or type CHANGE to change the destination \nor QUIT to exit:\n");
+		log_print("%02x ", msg->Data[i]);;
 
 	return 0;
 }
 
 static mtAfCb_t mtAfCb = { //
-		mtAfDataConfirmCb,	//MT_AF_DATA_CONFIRM
-				mtAfIncomingMsgCb,	//MT_AF_INCOMING_MSG
-				NULL,				//MT_AF_INCOMING_MSG_EXT
-				NULL,				//MT_AF_DATA_RETRIEVE
-				NULL,			    //MT_AF_REFLECT_ERROR
+		mtAfDataConfirmCb,			// MT_AF_DATA_CONFIRM
+				mtAfIncomingMsgCb,	// MT_AF_INCOMING_MSG
+				NULL,				// MT_AF_INCOMING_MSG_EXT
+				NULL,				// MT_AF_DATA_RETRIEVE
+				NULL,			    // MT_AF_REFLECT_ERROR
 		};
 
 ////////////////////////////////////////////////////
@@ -380,9 +372,9 @@ uint8_t mtAppCfgCommissioningStartCb(appCfgStartCommissioningStart_t *msg) {
 }
 
 static mtAppCfgCb_t mtAppCfgCb = { //
-		mtAppCfgCommissioningNotifyCb, //
-				mtAppCfgSetChannelCb, //
-				mtAppCfgCommissioningStartCb //
+		mtAppCfgCommissioningNotifyCb, 			//
+				mtAppCfgSetChannelCb, 			//
+				mtAppCfgCommissioningStartCb 	//
 		};
 
 /********************************************************************
@@ -403,7 +395,9 @@ static uint8_t mtUtilGetDeviceInfoCb(utilGetDeviceInfoFormat_t *msg) {
 	return 0;
 }
 
-static mtUtilCb_t mtUtilCb = { mtUtilGetDeviceInfoCb };
+static mtUtilCb_t mtUtilCb = { //
+		mtUtilGetDeviceInfoCb //
+		};
 
 /////////////////////////////////////////////////
 
@@ -597,17 +591,19 @@ void vAppTask(void *pvParameters) {
 	appCfgRegisterCallbacks(mtAppCfgCb);
 	utilRegisterCallbacks(mtUtilCb);
 
+	// startup delay
 	vTaskDelay(1000);
 
+	// ping ok?
 	if (sysVersion() == 0) {
+		// initialize coordinator
 		znp_init_coordinator(0);
+
+		// register cluster
+		register_clusters(0x09d1);
 	}
 
-	//
-	register_clusters(0x09d1);
-
-	vTaskDelay(5000);
-
+	// endless loop, handle CC2530 packets
 	while (1) {
 		rpcWaitMqClientMsg(portMAX_DELAY);
 	}
