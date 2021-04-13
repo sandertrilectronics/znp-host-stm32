@@ -50,6 +50,8 @@
 #include "mtZdo.h"
 #include "mtAf.h"
 #include "mtSapi.h"
+#include "mtAppCfg.h"
+#include "mtUtil.h"
 
 #include "dbgPrint.h"
 
@@ -80,43 +82,44 @@ uint8_t srspRpcLen;
  *
  * @return  length of current Rx Buffer
  *************************************************************************************************/
-void mtProcess(uint8_t *rpcBuff, uint8_t rpcLen)
-{
-    //Read CMD0
-    switch (rpcBuff[0] & MT_RPC_SUBSYSTEM_MASK)
-    {
-    case MT_RPC_SYS_ZDO:
-        //process ZDO RPC's in the ZDO module
-        zdoProcess(rpcBuff, rpcLen);
-        break;
+void mtProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
+	//Read CMD0
+	switch (rpcBuff[0] & MT_RPC_SUBSYSTEM_MASK) {
+		case MT_RPC_SYS_ZDO:
+			//process ZDO RPC's in the ZDO module
+			zdoProcess(rpcBuff, rpcLen);
+			break;
 
-    case MT_RPC_SYS_SYS:
-        //process SYS RPC's in the Sys module
-        sysProcess(rpcBuff, rpcLen);
-        break;
+		case MT_RPC_SYS_SYS:
+			//process SYS RPC's in the Sys module
+			sysProcess(rpcBuff, rpcLen);
+			break;
 
-    case MT_RPC_SYS_AF:
-        //process SYS RPC's in the Sys module
-        afProcess(rpcBuff, rpcLen);
-        break;
+		case MT_RPC_SYS_AF:
+			//process SYS RPC's in the Sys module
+			afProcess(rpcBuff, rpcLen);
+			break;
 
-    case MT_RPC_SYS_SAPI:
-        //process SYS RPC's in the Sys module
-        sapiProcess(rpcBuff, rpcLen);
-        break;
+		case MT_RPC_SYS_SAPI:
+			//process SYS RPC's in the Sys module
+			sapiProcess(rpcBuff, rpcLen);
+			break;
 
-    case MT_RPC_SYS_APP_CFG:
-        //process SYS RPC's in the App Cfg module
-        appCfgProcess(rpcBuff, rpcLen);
-        break;
+		case MT_RPC_SYS_UTIL:
+			//process SYS RPC's in the Util module
+			utilProcess(rpcBuff, rpcLen);
+			break;
 
-    default:
-        dbg_print(PRINT_LEVEL_VERBOSE,
-                "mtProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0],
-                rpcBuff[1]);
+		case MT_RPC_SYS_APP_CFG:
+			//process SYS RPC's in the App Cfg module
+			appCfgProcess(rpcBuff, rpcLen);
+			break;
 
-        break;
-    }
+		default:
+			dbg_print(PRINT_LEVEL_VERBOSE, "mtProcess: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0], rpcBuff[1]);
+
+			break;
+	}
 
 }
 

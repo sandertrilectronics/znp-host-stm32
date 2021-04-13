@@ -37,6 +37,7 @@
 #include "mtAppCfg.h"
 #include "mtSys.h"
 #include "mtParser.h"
+#include "mtUtil.h"
 #include "rpcTransport.h"
 #include "dbgPrint.h"
 /* USER CODE END Includes */
@@ -81,7 +82,16 @@ void log_print(const char *fmt, ...) {
 		if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
 			return;
 
-		// Create vaarg list
+		// print tick
+		/*snprintf(working_buffer, 256, "%lu\t", HAL_GetTick());
+
+		 // append parameters
+		 va_list args;
+		 va_start(args, fmt);
+		 vsnprintf(&working_buffer[strlen(working_buffer)], 256 - strlen(working_buffer), fmt, args);
+		 va_end(args);*/
+
+		// append parameters
 		va_list args;
 		va_start(args, fmt);
 		vsnprintf(working_buffer, 256, fmt, args);
@@ -94,7 +104,7 @@ void log_print(const char *fmt, ...) {
 		xSemaphoreGive(dbg_sem);
 	}
 	else {
-		// Create vaarg list
+		// append parameters
 		va_list args;
 		va_start(args, fmt);
 		vsnprintf(working_buffer, 256, fmt, args);
@@ -165,7 +175,7 @@ static uint8_t mtZdoStateChangeIndCb(uint8_t newDevState) {
 			break;
 		case DEV_COORD_STARTING:
 			log_print("Network Starting\n");
-			dbg_print(PRINT_LEVEL_INFO, "mtZdoStateChangeIndCb: Started as Zigbee Coordinator\n");
+			dbg_print(PRINT_LEVEL_INFO, "mtZdoStateChangeIndCb: Starting as Zigbee Coordinator...\n");
 			break;
 		case DEV_ZB_COORD:
 			log_print("Network Started\n");
@@ -266,12 +276,22 @@ static uint8_t mtZdoActiveEpRspCb(ActiveEpRspFormat_t *msg) {
 }
 
 static uint8_t mtZdoEndDeviceAnnceIndCb(EndDeviceAnnceIndFormat_t *msg) {
+	// new device
+	log_print("New device joined network:\n");
+	log_print("SrcAddr: %04x\n", msg->SrcAddr);
+	log_print("NwkAddr: %04x\n", msg->NwkAddr);
+	uint32_t top = msg->IEEEAddr >> 32;
+	uint32_t bot = msg->IEEEAddr & 0xffffffff;
+	log_print("IEEEAddr: %08x%08x\r\n", top, bot);
+	log_print("Capabilities: %02x\n", msg->Capabilities);
+
+	// check if the endpoint is active
 	ActiveEpReqFormat_t actReq;
 	actReq.DstAddr = msg->NwkAddr;
 	actReq.NwkAddrOfInterest = msg->NwkAddr;
-
-	log_print("\nNew device joined network.\n");
 	zdoActiveEpReq(&actReq);
+
+	//
 	return 0;
 }
 
@@ -324,8 +344,8 @@ static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
 
 static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
 	log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
-	msg->Data[msg->Len] = '\0';
-	log_print("%s\n", (char*) msg->Data);
+	for (uint8_t i = 0; i < msg->Len; i++)
+		log_print("%02x ", msg->Data[i]);
 	log_print("\nEnter message to send or type CHANGE to change the destination \nor QUIT to exit:\n");
 
 	return 0;
@@ -342,7 +362,10 @@ static mtAfCb_t mtAfCb = { //
 ////////////////////////////////////////////////////
 
 uint8_t mtAppCfgCommissioningNotifyCb(appCfgCommissioningNotifyFormat_t *msg) {
-	log_print("Commissioning notify\r\nStatus: %02x\r\nMode: %02x\r\nMode: %02x\r\n", msg->status, msg->commissioningMode1, msg->commissioningMode2);
+	log_print("Commissioning notify\r\n");
+	log_print("Status: %02x\r\n", msg->status);
+	log_print("Mode: %02x\r\n", msg->commissioningMode1);
+	log_print("Mode: %02x\r\n", msg->commissioningMode2);
 	return 0;
 }
 
@@ -361,34 +384,65 @@ static mtAppCfgCb_t mtAppCfgCb = { //
 				mtAppCfgSetChannelCb, //
 				mtAppCfgCommissioningStartCb //
 		};
+
+/********************************************************************
+ * START OF UTIL CALL BACK FUNCTIONS
+ */
+static uint8_t mtUtilGetDeviceInfoCb(utilGetDeviceInfoFormat_t *msg) {
+	log_print("Get Info Response\r\n");
+	log_print("Success: %02x\r\n", msg->success);
+	uint32_t top = msg->ieee_addr >> 32;
+	uint32_t bot = msg->ieee_addr & 0xffffffff;
+	log_print("IEEE Addr: %08x%08x\r\n", top, bot);
+	log_print("Short Addr: %04x\r\n", msg->short_addr);
+	log_print("Device Type: %02x\r\n", msg->device_type);
+	log_print("Device state: %02x\r\n", msg->device_state);
+	log_print("Ass Dev Cnt: %02x\r\n", msg->ass_device_cnt);
+	for (uint8_t i = 0; i < msg->ass_device_cnt; i++)
+		log_print("Ass Dev %d: %04x\r\n", i, msg->ass_device_list[i]);
+	return 0;
+}
+
+static mtUtilCb_t mtUtilCb = { mtUtilGetDeviceInfoCb };
+
 /////////////////////////////////////////////////
+
+void rcpWaitPeriod(uint32_t period) {
+	uint32_t waittime = period;
+	uint32_t start = xTaskGetTickCount();
+	while (rpcWaitMqClientMsg(waittime) == 0) {
+		uint32_t passed_time = start - xTaskGetTickCount();
+		waittime -= passed_time;
+		start = xTaskGetTickCount();
+	}
+}
 
 // init coordinator
 // taken from https://sunmaysky.blogspot.com/2017/02/use-ztool-z-stack-30-znp-to-set-up.html
-int znp_init_coordinator(void) {
+int znp_init_coordinator(uint8_t enable_commissioning) {
 	OsalNvWriteFormat_t req;
 	setChannelFormat_t chn;
 	startCommissioningFormat_t strt;
 	ResetReqFormat_t rst;
 
-	vTaskDelay(1000);
-	log_print("----------------------\r\n");
+	/*rcpWaitPeriod(1000);
+	 log_print("----------------------\r\n");
 
-	// write startup option to clear NV when reset
-	req.Id = 0x0003;
-	req.Offset = 0x00;
-	req.Len = 0x01;
-	req.Value[0] = 0x03;
-	sysOsalNvWrite(&req);
+	 // Clear complete memory of CC2530
+	 req.Id = 0x0003;
+	 req.Offset = 0x00;
+	 req.Len = 0x01;
+	 req.Value[0] = 0x03;
+	 sysOsalNvWrite(&req);*/
 
-	vTaskDelay(1000);
+	rcpWaitPeriod(1000);
 	log_print("----------------------\r\n");
 
 	// hard reset
 	rst.Type = 0x00;
 	sysResetReq(&rst);
 
-	vTaskDelay(4000);
+	rcpWaitPeriod(4000);
 	log_print("----------------------\r\n");
 
 	// Write ZCD_NV_LOGICAL_TYPE to 0 which means coordinator
@@ -398,7 +452,7 @@ int znp_init_coordinator(void) {
 	req.Value[0] = 0x00;
 	sysOsalNvWrite(&req);
 
-	vTaskDelay(1000);
+	rcpWaitPeriod(1000);
 	log_print("----------------------\r\n");
 
 	// set primary channel to 13
@@ -406,7 +460,7 @@ int znp_init_coordinator(void) {
 	chn.channel = CFG_CHANNEL_0x00002000;
 	appCfgSetChannel(&chn);
 
-	vTaskDelay(1000);
+	rcpWaitPeriod(1000);
 	log_print("----------------------\r\n");
 
 	// disable secondary channel
@@ -414,15 +468,122 @@ int znp_init_coordinator(void) {
 	chn.channel = CFG_CHANNEL_NONE;
 	appCfgSetChannel(&chn);
 
-	vTaskDelay(1000);
+	rcpWaitPeriod(1000);
 	log_print("----------------------\r\n");
 
-	// start commissioning using network formation
-	strt.commissioningMode = CFG_COMM_MODE_NWK_FORMATION;
+	if (enable_commissioning) {
+		// start commissioning using network formation
+		strt.commissioningMode = CFG_COMM_MODE_NWK_FORMATION;
+		appCfgStartCommissioning(&strt);
+
+		rcpWaitPeriod(10000);
+
+		log_print("----------------------\r\n");
+
+		// get device info
+		utilGetDeviceInfo();
+
+		rcpWaitPeriod(1000);
+		log_print("----------------------\r\n");
+
+		// Write ZCD_NV_LOGICAL_TYPE to 0 which means coordinator
+		req.Id = 0x008F;
+		req.Offset = 0x00;
+		req.Len = 0x01;
+		req.Value[0] = 0x01;
+		sysOsalNvWrite(&req);
+
+		rcpWaitPeriod(1000);
+		log_print("----------------------\r\n");
+	}
+	else {
+		// get device info
+		utilGetDeviceInfo();
+
+		rcpWaitPeriod(1000);
+		log_print("----------------------\r\n");
+	}
+
+	// start commissioning using network steering
+	strt.commissioningMode = CFG_COMM_MODE_NWK_STEERING;
 	appCfgStartCommissioning(&strt);
 
 	//
 	return 0;
+}
+
+#define ZCL_READ_ATTR			0x00
+#define ZCL_READ_ATTR_RSP		0x01
+#define ZCL_WRITE_ATTR			0x02
+#define ZCL_WRITE_ATTR_RSP		0x04
+
+void register_clusters(uint16_t addr) {
+	SimpleDescReqFormat_t desc_req;
+	ActiveEpReqFormat_t act_req;
+	RegisterFormat_t reg_req;
+	DataRequestFormat_t data_req;
+
+	rcpWaitPeriod(10000);
+	log_print("1 ----------------------\r\n");
+
+	// check if the endpoint is active
+	act_req.DstAddr = addr;
+	act_req.NwkAddrOfInterest = addr;
+	zdoActiveEpReq(&act_req);
+
+	rcpWaitPeriod(10000);
+	log_print("2 ----------------------\r\n");
+
+	// request descriptors
+	desc_req.DstAddr = addr;
+	desc_req.NwkAddrOfInterest = addr;
+	desc_req.Endpoint = 1;
+	zdoSimpleDescReq(&desc_req);
+
+	rcpWaitPeriod(10000);
+	log_print("3 ----------------------\r\n");
+
+	// register device
+	reg_req.EndPoint = 0x01;
+	reg_req.AppProfId = 0x0104;
+	reg_req.AppDeviceId = 0x0301;
+	reg_req.AppDevVer = 0x01;
+	reg_req.LatencyReq = 0;
+	reg_req.AppNumInClusters = 8;
+	reg_req.AppInClusterList[0] = 0x0000;
+	reg_req.AppInClusterList[1] = 0x0001;
+	reg_req.AppInClusterList[2] = 0x0003;
+	reg_req.AppInClusterList[3] = 0x000a;
+	reg_req.AppInClusterList[4] = 0x0020;
+	reg_req.AppInClusterList[5] = 0x0201;
+	reg_req.AppInClusterList[6] = 0x0204;
+	reg_req.AppInClusterList[7] = 0x0b05;
+	reg_req.AppNumOutClusters = 2;
+	reg_req.AppOutClusterList[0] = 0x0000;
+	reg_req.AppOutClusterList[1] = 0x0019;
+	afRegister(&reg_req);
+
+	rcpWaitPeriod(10000);
+	log_print("4 ----------------------\r\n");
+
+	// read a cluster
+	data_req.DstAddr = addr;
+	data_req.DstEndpoint = 0x01;
+	data_req.SrcEndpoint = 0x01;
+	data_req.ClusterID = 0x0201;
+	data_req.TransID = 0x05;
+	data_req.Options = 0x00;
+	data_req.Radius = 0x07;
+	data_req.Len = 5;
+	data_req.Data[0] = 0x00; // frame control
+	data_req.Data[1] = 0x02; // transaction sequence num
+	data_req.Data[2] = ZCL_READ_ATTR; // Command ID
+	data_req.Data[3] = 0x00; // Cluster 16bit low
+	data_req.Data[4] = 0x00; // Cluster 16bit high
+	afDataRequest(&data_req);
+
+	rcpWaitPeriod(10000);
+	log_print("5 ----------------------\r\n");
 }
 
 /////////////////////////////////////////////////
@@ -434,22 +595,21 @@ void vAppTask(void *pvParameters) {
 	zdoRegisterCallbacks(mtZdoCb);
 	afRegisterCallbacks(mtAfCb);
 	appCfgRegisterCallbacks(mtAppCfgCb);
+	utilRegisterCallbacks(mtUtilCb);
 
 	vTaskDelay(1000);
 
 	if (sysVersion() == 0) {
-		znp_init_coordinator();
+		znp_init_coordinator(0);
 	}
 
-	while (1) {
-		/*
-		 if (sysVersion() == 0)
-		 log_print("Ping ok\r\n");
-		 else
-		 log_print("Ping failed\r\n");
-		 */
+	//
+	register_clusters(0x09d1);
 
-		rpcWaitMqClientMsg(50);
+	vTaskDelay(5000);
+
+	while (1) {
+		rpcWaitMqClientMsg(portMAX_DELAY);
 	}
 }
 

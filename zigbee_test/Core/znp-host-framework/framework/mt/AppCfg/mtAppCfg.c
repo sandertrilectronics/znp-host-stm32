@@ -77,9 +77,6 @@ static void processStartCommissioning(uint8_t *rpcBuff, uint8_t rpcLen) {
 }
 
 static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
-	//copies sresp to local buffer
-	//memcpy(srspRpcBuff, rpcBuff, rpcLen);
-
 	//srspRpcLen = rpcLen;
 	switch (rpcBuff[1]) {
 		case MT_APP_CFG_SRSP_SET_CHANNEL:
@@ -94,7 +91,6 @@ static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 			dbg_print(PRINT_LEVEL_INFO, "processSrsp: unsupported message [%x:%x]\n", rpcBuff[0], rpcBuff[1]);
 			break;
 	}
-
 }
 
 void appCfgProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
@@ -108,8 +104,9 @@ void appCfgProcess(uint8_t *rpcBuff, uint8_t rpcLen) {
 		//Read CMD1 and processes the specific SREQ
 		switch (rpcBuff[1]) {
 			case MT_APP_CFG_COMMISSIONING_NOTIFY:
-				dbg_print(PRINT_LEVEL_VERBOSE, "appCfgProcess: MT_AF_DATA_CONFIRM\n");
+				dbg_print(PRINT_LEVEL_VERBOSE, "appCfgProcess: MT_AP_CFG_COMMISSIONING_NOTIFY\n");
 				processCommissioningNotify(rpcBuff, rpcLen);
+				break;
 			default:
 				dbg_print(PRINT_LEVEL_WARNING, "processRpcAf: CMD0:%x, CMD1:%x, not handled\n", rpcBuff[0], rpcBuff[1]);
 				break;
