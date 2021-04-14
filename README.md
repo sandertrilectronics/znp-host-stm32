@@ -57,7 +57,7 @@ https://www.st.com/en/evaluation-tools/p-l496g-cell02.html
 
 https://www.waveshare.com/cc2530-eval-kit.htm
 
-The CC2530 Eval Kit runs the ZNP firmware found in Z-Stack 3.0.2. For convienence it is also found in this repository as source file (CC2530ZNP-with-SBL.hex). This should be flashed on using the CC-Debuger from TI.
+The CC2530 Eval Kit runs the ZNP firmware found in Z-Stack 3.0.2. For convienence it is also found in this repository as source file (CC2530ZNP-with-SBL.hex). This should be flashed on the CC2530 using the CC-Debuger from TI before connecting it with the STM32.
 
 Some connections between the modules are to be made. The Arduino headers on the bottom side of the P-L496G-CELL02 are used to connect to the CC2530 Eval Kit. The connections are as follows:
 
