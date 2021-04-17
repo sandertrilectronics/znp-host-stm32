@@ -1,0 +1,33 @@
+{
+  "configurations": [
+    {
+      "name": "STM32",
+      "includePath": [
+        "Core/Inc",
+        "Core/znp-app",
+        "Core/znp-host-framework/framework/mt",
+        "Core/znp-host-framework/framework/mt/Af",
+        "Core/znp-host-framework/framework/mt/AppCfg",
+        "Core/znp-host-framework/framework/mt/Sapi",
+        "Core/znp-host-framework/framework/mt/Sys",
+        "Core/znp-host-framework/framework/mt/Util",
+        "Core/znp-host-framework/framework/mt/Zdo",
+        "Core/znp-host-framework/framework/platform/stm32",
+        "Core/znp-host-framework/framework/rpc",
+        "Drivers/CMSIS/Device/ST/STM32L4xx/Include",
+        "Drivers/CMSIS/Include",
+        "Drivers/STM32L4xx_HAL_Driver/Inc",
+        "Drivers/STM32L4xx_HAL_Driver/Inc/Legacy",
+        "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+        "Middlewares/Third_Party/FreeRTOS/Source/include",
+        "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+      ],
+      "defines": [
+        "STM32L496xx",
+        "USE_HAL_DRIVER"
+      ],
+      "compilerPath": "C:\\VSCODE\\GNU-ARM-EMBEDDED-TOOLCHAIN\\10-2020-Q4-MAJOR\\BIN\\ARM-NONE-EABI-GCC.EXE"
+    }
+  ],
+  "version": 4
+}

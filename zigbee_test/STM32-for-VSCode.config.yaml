@@ -1,0 +1,102 @@
+# Configuration file for the STM32 for VSCode extension
+# Arrays can be inputted in two ways. One is: [entry_1, entry_2, ..., entry_final]
+# or by adding an indented list below the variable name e.g.:
+# VARIABLE:
+# - entry_1
+# - entry_2
+
+# The project name
+target: test_firmware
+# Can be C or C++
+language: C
+
+optimization: Og -g3
+
+# MCU settings
+targetMCU: stm32l4x
+cpu: -mcpu=cortex-m4
+fpu: -mfpu=fpv4-sp-d16
+floatAbi: -mfloat-abi=hard
+ldscript: STM32L496AGIx_FLASH.ld # linker script
+
+# Compiler definitions. The -D prefix for the compiler will be automatically added.
+cDefinitions: 
+  - USE_HAL_DRIVER
+  - STM32L496xx
+
+cxxDefinitions: []
+asDefinitions: []
+
+# Compiler flags
+cFlags: []
+cxxFlags: []
+assemblyFlags: []
+ldFlags: 
+  - --specs=nano.specs
+  - -u_printf_float
+
+# libraries to be included. The -l prefix to the library will be automatically added.
+# Mind that non standard libraries should have a path to their respective directory.
+libraries: 
+  - c
+  - m
+  - nosys
+
+libraryDirectories: []
+
+# Files or folders that will be excluded from compilation.
+# Glob patterns (https://www.wikiwand.com/en/Glob_(programming)) can be used.
+# Do mind that double stars are reserved in yaml
+# these should be escaped with a: \ or the name should be in double quotes e.g. "**.test.**"
+excludes: 
+  - "**/Examples/**"
+  - "**/examples/**"
+  - "**/Example/**"
+  - "**/example/**"
+  - "**_template.*"
+
+
+# Include directories (directories containing .h or .hpp files)
+# If a CubeMX makefile is present it will automatically include the include directories from that makefile.
+includeDirectories: 
+  - Inc/**
+  - Core/Inc/**
+  - Core/Lib/**
+  - Core/znp-app/**
+  - Core/znp-host-framework/framework/mt/**
+  - Core/znp-host-framework/framework/mt/Af/**
+  - Core/znp-host-framework/framework/mt/AppCfg/**
+  - Core/znp-host-framework/framework/mt/Sapi/**
+  - Core/znp-host-framework/framework/mt/Sys/**
+  - Core/znp-host-framework/framework/mt/Util/**
+  - Core/znp-host-framework/framework/mt/Zdo/**
+  - Core/znp-host-framework/framework/platform/stm32/**
+  - Core/znp-host-framework/framework/rpc/**
+
+
+
+# Files that should be included in the compilation.
+# If a CubeMX makefile is present it will automatically include the  c and cpp/cxx files from that makefile.
+# Glob patterns (https://www.wikiwand.com/en/Glob_(programming)) can be used.
+# Do mind that double stars are reserved in yaml
+# these should be escaped with a: \ or the name should be in double quotes e.g. "HARDWARE_DRIVER*.c"
+sourceFiles:  
+  - Src/**
+  - Core/Src/**
+  - Core/Lib/**
+  - Core/znp-app/**
+  - Core/znp-host-framework/framework/mt/**
+  - Core/znp-host-framework/framework/mt/Af/**
+  - Core/znp-host-framework/framework/mt/AppCfg/**
+  - Core/znp-host-framework/framework/mt/Sapi/**
+  - Core/znp-host-framework/framework/mt/Sys/**
+  - Core/znp-host-framework/framework/mt/Util/**
+  - Core/znp-host-framework/framework/mt/Zdo/**
+  - Core/znp-host-framework/framework/platform/stm32/**
+  - Core/znp-host-framework/framework/rpc/**
+
+
+# When no makefile is present it will show a warning pop-up.
+# However when compilation without the CubeMX Makefile is desired, this can be turned of.
+suppressMakefileWarning: false
+    
