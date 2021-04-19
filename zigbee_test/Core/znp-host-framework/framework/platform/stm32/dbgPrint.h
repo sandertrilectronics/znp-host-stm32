@@ -43,6 +43,8 @@ extern "C"
 {
 #endif
 
+#include "log.h"
+
 enum
 {
 	PRINT_LEVEL_ERROR,
@@ -54,7 +56,9 @@ enum
 
 #define PRINT_LEVEL PRINT_LEVEL_INFO_LOWLEVEL
 
-void dbg_print(int printf_level, const char *fmt, ...);
+#define dbg_print(lvl, fmt, ...)	do { if (lvl < PRINT_LEVEL) { log_print(fmt, ##__VA_ARGS__); } } while(0)
+
+//void dbg_print(int printf_level, const char *fmt, ...);
 
 #ifdef __cplusplus
 }

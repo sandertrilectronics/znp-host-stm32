@@ -11,13 +11,13 @@ void znp_if_init(void) {
 }
 
 void znp_if_evt_send(event_result_t* res) {
-    xQueueSendToFront(_znp_ev_queue, res, 100);
+    xQueueSendToBack(_znp_ev_queue, res, 100);
 }
 
-uint8_t znp_if_wait_for_event(event_type_t event_to_wait_for, uint32_t timeout) {
+event_result_t *znp_if_wait_for_event(event_type_t event_to_wait_for, uint16_t address, uint32_t timeout) {
     uint32_t waittime = timeout;
     uint32_t start = xTaskGetTickCount();
-    event_result_t res;
+    static event_result_t event = { 0 };
 
     // loop
     while (1) {
@@ -26,33 +26,24 @@ uint8_t znp_if_wait_for_event(event_type_t event_to_wait_for, uint32_t timeout) 
         waittime -= passed_time;
         start = xTaskGetTickCount();
 
-        // handle message
-        if (rpcWaitMqClientMsg(waittime) != 0)
-            break;
-
-        // bit was set?
-        if (xQueueReceive(_znp_ev_queue, &res, 0) == pdTRUE) {
-            if (res.type == event_to_wait_for) {
+        // event was given?
+        if (xQueueReceive(_znp_ev_queue, &event, waittime) == pdTRUE) {
+            if ((event.adr == address || event.adr == 0xFFFF) && event.type == event_to_wait_for) {
                 break;
-            }
-            else {
-                xQueueSendToBack(_znp_ev_queue, &res, 0);
             }
         }
     }
 
-    log_print("Done %d %d\r\n", res.type, res.result);
-
     // did we get the right event type?
-    if (res.type == event_to_wait_for) {
-        if (res.result == 0)
-            return 1;
+    if (event.type == event_to_wait_for) {
+        if (event.result == 0)
+            return &event;
         else
-            return 0;
+            return NULL;
     }
     // bit not set, timeout
     else {
-        return 0;
+        return NULL;
     }
 }
 

@@ -5,7 +5,9 @@
 
 #define DEVICE_MEM_MAX                  32
 #define CLSTR_LIST_MAX                  16
-#define EV_QUEUE_SIZE                   16
+
+#define EV_QUEUE_SIZE                   4
+#define EV_DATA_LEN_MAX                 32
 
 typedef struct {
     uint16_t adr_short;
@@ -28,14 +30,17 @@ typedef enum {
 
 typedef struct {
     event_type_t type;
+    uint16_t adr;
     uint8_t result;
+    uint8_t data_len;
+    uint8_t data[EV_DATA_LEN_MAX];
 } event_result_t;
 
 extern void znp_if_init(void);
 
 extern void znp_if_evt_send(event_result_t *res);
 
-extern uint8_t znp_if_wait_for_event(event_type_t event_to_wait_for, uint32_t timeout);
+extern event_result_t *znp_if_wait_for_event(event_type_t event_to_wait_for, uint16_t address, uint32_t timeout);
 
 extern znp_device_t* znp_if_dev_get(uint16_t address);
 

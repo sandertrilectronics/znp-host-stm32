@@ -19,11 +19,13 @@ static uint8_t mtSysResetIndCb(ResetIndFormat_t *msg) {
 }
 
 static uint8_t mtVersionIndCb(VersionSrspFormat_t *msg) {
-    log_print("Version: %d %d %d %d %d %d\n", msg->MaintRel, msg->MajorRel, msg->MinorRel, msg->Product, msg->TransportRev);
+    log_print("Version: %d %d %d %d %d %d\n", msg->MaintRel, msg->MajorRel, msg->MinorRel, msg->Product,
+              msg->TransportRev);
     return 0;
 }
 
-static mtSysCb_t mtSysCb = {NULL, NULL, NULL, mtSysResetIndCb, mtVersionIndCb, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static mtSysCb_t mtSysCb = {NULL, NULL, NULL, mtSysResetIndCb, mtVersionIndCb, NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL};
 /********************************************************************
  * START OF ZDO CALL BACK FUNCTIONS
  */
@@ -94,6 +96,7 @@ static uint8_t mtZdoSimpleDescRspCb(SimpleDescRspFormat_t *msg) {
     // send event
     event_result_t res;
     res.type = EVT_RSP_SIMPLE_DESC;
+    res.adr = msg->SrcAddr;
     res.result = msg->Status;
     znp_if_evt_send(&res);
 
@@ -174,10 +177,14 @@ static uint8_t mtZdoActiveEpRspCb(ActiveEpRspFormat_t *msg) {
     // send event
     event_result_t res;
     res.type = EVT_RSP_IS_ACTIVE;
+    res.adr = msg->SrcAddr;
     res.result = msg->Status;
     znp_if_evt_send(&res);
 
-    // SimpleDescReqFormat_t simReq;
+    // add device
+    znp_if_dev_add(msg->SrcAddr);
+
+    // print command info
     log_print("NwkAddr: 0x%04X\n", msg->NwkAddr);
     if (msg->Status == MT_RPC_SUCCESS) {
         log_print("Number of Endpoints: %d\nActive Endpoints: ", msg->ActiveEPCount);
@@ -189,6 +196,7 @@ static uint8_t mtZdoActiveEpRspCb(ActiveEpRspFormat_t *msg) {
         log_print("ActiveEpRsp Status: FAIL 0x%02X\n", msg->Status);
     }
 
+    // return status
     return msg->Status;
 }
 
@@ -208,8 +216,8 @@ static uint8_t mtZdoEndDeviceAnnceIndCb(EndDeviceAnnceIndFormat_t *msg) {
 
     // check if the endpoint is active
     ActiveEpReqFormat_t actReq;
-    actReq.DstAddr = msg->NwkAddr;
-    actReq.NwkAddrOfInterest = msg->NwkAddr;
+    actReq.DstAddr = msg->SrcAddr;
+    actReq.NwkAddrOfInterest = msg->SrcAddr;
     zdoActiveEpReq(&actReq);
 
     //
@@ -267,10 +275,21 @@ static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
 
 static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
     log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
-    for (uint8_t i = 0; i < msg->Len; i++)
+    for (uint8_t i = 0; i < msg->Len; i++) {
         log_print("%02x ", msg->Data[i]);
-    ;
+    }
 
+    // send event
+    event_result_t res;
+    res.type = EVT_RSP_DATA_REQUEST;
+    res.adr = msg->SrcAddr;
+    res.result = 0;
+    int len = MIN(EV_DATA_LEN_MAX, msg->Len);
+    res.data_len = len;
+    memcpy(res.data, msg->Data, len);
+    znp_if_evt_send(&res);
+
+    // all good
     return 0;
 }
 
@@ -278,6 +297,7 @@ static uint8_t mtAfRegisterCb(RegisterSrspFormat_t *msg) {
     // send event
     event_result_t res;
     res.type = EVT_RSP_REGISTER;
+    res.adr = 0xFFFF;  // dont know address
     res.result = msg->success;
     znp_if_evt_send(&res);
 
@@ -286,20 +306,18 @@ static uint8_t mtAfRegisterCb(RegisterSrspFormat_t *msg) {
     } else {
         log_print("Register Error\n");
     }
+
+    return msg->success;
 }
 
 static uint8_t mtAfDataRequestCb(DataRequestSrspFormat_t *msg) {
-    // send event
-    event_result_t res;
-    res.type = EVT_RSP_DATA_REQUEST;
-    res.result = msg->success;
-    znp_if_evt_send(&res);
-
     if (msg->success == 0) {
         log_print("Data request OK\n");
     } else {
         log_print("Data request Error\n");
     }
+
+    return msg->success;
 }
 
 static mtAfCb_t mtAfCb = {
@@ -357,10 +375,15 @@ static uint8_t mtUtilGetDeviceInfoCb(utilGetDeviceInfoFormat_t *msg) {
         // print info
         log_print("Ass Dev %d: %04x\r\n", i, msg->ass_device_list[i]);
 
-        // register device
-        znp_if_dev_add(msg->ass_device_list[i]);
+        // check if the endpoint is active
+        ActiveEpReqFormat_t act_req;
+        act_req.DstAddr = msg->ass_device_list[i];
+        act_req.NwkAddrOfInterest = msg->ass_device_list[i];
+        zdoActiveEpReq(&act_req);
     }
-    return 0;
+
+    // return resultcode
+    return msg->success;
 }
 
 static mtUtilCb_t mtUtilCb = {

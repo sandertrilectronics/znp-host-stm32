@@ -307,22 +307,15 @@ uint8_t sysResetReq(ResetReqFormat_t *req) {
 	uint32_t cmdLen = 1;
 	uint8_t cmd[cmdLen];
 
-	if (cmd) {
+	cmd[cmInd++] = req->Type;
 
-		cmd[cmInd++] = req->Type;
+	status = rpcSendFrame((MT_RPC_CMD_AREQ | MT_RPC_SYS_SYS),
+	MT_SYS_RESET_REQ, cmd, cmdLen);
 
-		status = rpcSendFrame((MT_RPC_CMD_AREQ | MT_RPC_SYS_SYS),
-		MT_SYS_RESET_REQ, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS) {
-			rpcWaitMqClientMsg(50);
-		}
-		return status;
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
-	else {
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
-	}
+	return status;
 }
 
 /*********************************************************************
@@ -488,32 +481,24 @@ uint8_t sysOsalNvWrite(OsalNvWriteFormat_t *req) {
 	uint8_t cmInd = 0;
 	uint32_t cmdLen = 4 + req->Len;
 	uint8_t cmd[cmdLen];
+	int idx;
 
-	if (cmd) {
-
-		int idx;
-
-		cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
-		cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
-		cmd[cmInd++] = req->Offset;
-		cmd[cmInd++] = req->Len;
-		for (idx = 0; idx < req->Len; idx++) {
-			cmd[cmInd++] = req->Value[idx];
-		}
-
-		status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
-		MT_SYS_OSAL_NV_WRITE, cmd, cmdLen);
-
-		if (status == MT_RPC_SUCCESS) {
-			rpcWaitMqClientMsg(50);
-		}
-
-		return status;
+	cmd[cmInd++] = (uint8_t) (req->Id & 0xFF);
+	cmd[cmInd++] = (uint8_t) ((req->Id >> 8) & 0xFF);
+	cmd[cmInd++] = req->Offset;
+	cmd[cmInd++] = req->Len;
+	for (idx = 0; idx < req->Len; idx++) {
+		cmd[cmInd++] = req->Value[idx];
 	}
-	else {
-		dbg_print(PRINT_LEVEL_WARNING, "Memory for cmd was not allocated\n");
-		return 1;
+
+	status = rpcSendFrame((MT_RPC_CMD_SREQ | MT_RPC_SYS_SYS),
+	MT_SYS_OSAL_NV_WRITE, cmd, cmdLen);
+
+	if (status == MT_RPC_SUCCESS) {
+		rpcWaitMqClientMsg(50);
 	}
+
+	return status;
 }
 
 /*********************************************************************

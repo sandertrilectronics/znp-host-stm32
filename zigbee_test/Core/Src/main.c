@@ -40,6 +40,7 @@
 #include "rpc.h"
 #include "rpcTransport.h"
 #include "znp_cmd.h"
+#include "log.h"
 
 /* USER CODE END Includes */
 
@@ -72,39 +73,6 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static SemaphoreHandle_t dbg_sem;
-
-void log_print(const char *fmt, ...) {
-    // small local working buffer
-    static char working_buffer[256];
-
-    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-        // take semaphore
-        if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
-            return;
-
-        // append parameters
-        va_list args;
-        va_start(args, fmt);
-        vsnprintf(working_buffer, 256, fmt, args);
-        va_end(args);
-
-        // send data
-        HAL_UART_Transmit(&huart2, (char *)working_buffer, strlen(working_buffer), 100);
-
-        // Give semaphore back
-        xSemaphoreGive(dbg_sem);
-    } else {
-        // append parameters
-        va_list args;
-        va_start(args, fmt);
-        vsnprintf(working_buffer, 256, fmt, args);
-        va_end(args);
-
-        // send data
-        HAL_UART_Transmit(&huart2, (char *)working_buffer, strlen(working_buffer), 100);
-    }
-}
 
 /////////////////////////////////////////////////
 
@@ -215,17 +183,7 @@ int znp_init_coordinator(uint8_t enable_commissioning) {
     return 0;
 }
 
-#define ZCL_READ_ATTR 0x00
-#define ZCL_READ_ATTR_RSP 0x01
-#define ZCL_WRITE_ATTR 0x02
-#define ZCL_WRITE_ATTR_RSP 0x04
-
 void register_clusters(uint16_t addr) {
-    SimpleDescReqFormat_t desc_req;
-    ActiveEpReqFormat_t act_req;
-    RegisterFormat_t reg_req;
-    DataRequestFormat_t data_req;
-
     vTaskDelay(10000);
 
     // check registration
@@ -254,20 +212,14 @@ void register_clusters(uint16_t addr) {
     log_print("12 ----------------------\r\n");
 
     // read a cluster
-    data_req.DstAddr = addr;
-    data_req.DstEndpoint = 0x01;
-    data_req.SrcEndpoint = 0x01;
-    data_req.ClusterID = 0x0201;
-    data_req.TransID = 0x05;
-    data_req.Options = 0x00;
-    data_req.Radius = 0x07;
-    data_req.Len = 5;
-    data_req.Data[0] = 0x00;           // frame control
-    data_req.Data[1] = 0x02;           // transaction sequence num
-    data_req.Data[2] = ZCL_READ_ATTR;  // Command ID
-    data_req.Data[3] = 0x00;           // Cluster 16bit low
-    data_req.Data[4] = 0x00;           // Cluster 16bit high
-    afDataRequest(&data_req);
+    znp_cluster_read_rsp_t *resp = znp_cmd_cluster_in_read(addr, 0, 4);
+
+    if (resp != NULL) {
+        log_print("Type: %d\r\n", resp->type);
+        if (resp->type == ZCL_CHARACTER_STRING) {
+            log_print("Str: %s\r\n", resp->data_arr);
+        }
+    }
 }
 
 /////////////////////////////////////////////////
@@ -289,7 +241,7 @@ void vAppTask(void *pvParameters) {
         znp_init_coordinator(0);
 
         // register cluster
-        register_clusters(0x4DB8);
+        register_clusters(0x82bc);
     }
 
     // endless loop, handle CC2530 packets
@@ -313,7 +265,7 @@ void vComTask(void *pvParameters) {
     rpcOpen();
 
     // start poll task
-    xTaskCreate(vPollTask, "POLL", 256, NULL, 5, NULL);
+    xTaskCreate(vPollTask, "POLL", 512, NULL, 5, NULL);
 
     // loop
     while (1) {
@@ -356,11 +308,10 @@ int main(void) {
     MX_LPUART1_UART_Init();
     MX_USART2_UART_Init();
     /* USER CODE BEGIN 2 */
-    dbg_sem = xSemaphoreCreateBinary();
-    xSemaphoreGive(dbg_sem);
+    log_init();
 
-    xTaskCreate(vAppTask, "APP", 1024, NULL, 6, NULL);
-    xTaskCreate(vComTask, "COM", 256, NULL, 5, NULL);
+    xTaskCreate(vAppTask, "APP", 1500, NULL, 6, NULL);
+    xTaskCreate(vComTask, "COM", 512, NULL, 5, NULL);
 
     /* USER CODE END 2 */
 

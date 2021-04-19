@@ -2,6 +2,7 @@
     "cortex-debug.armToolchainPath": "C:\\vscode\\GNU-Arm-Embedded-Toolchain\\10-2020-q4-major\\bin",
     "cortex-debug.openocdPath": "C:\\VSCODE\\OPENOCD-V0.11.0-I686-W64-MINGW32\\BIN\\OPENOCD.EXE",
     "files.associations": {
-        "znp_if.h": "c"
+        "znp_if.h": "c",
+        "dbgprint.h": "c"
     }
 }
