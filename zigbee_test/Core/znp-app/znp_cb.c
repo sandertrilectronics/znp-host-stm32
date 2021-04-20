@@ -83,7 +83,7 @@ static uint8_t mtZdoStateChangeIndCb(uint8_t newDevState) {
             dbg_print(PRINT_LEVEL_INFO, "mtZdoStateChangeIndCb: Device has lost information about its parent\n");
             break;
         default:
-            dbg_print(PRINT_LEVEL_INFO, "mtZdoStateChangeIndCb: unknown state");
+            dbg_print(PRINT_LEVEL_INFO, "mtZdoStateChangeIndCb: unknown state\n");
             break;
     }
 
@@ -278,6 +278,7 @@ static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
     for (uint8_t i = 0; i < msg->Len; i++) {
         log_print("%02x ", msg->Data[i]);
     }
+    log_print("\n");
 
     // send event
     event_result_t res;

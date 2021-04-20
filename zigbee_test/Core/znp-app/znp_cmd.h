@@ -5,10 +5,12 @@
 
 #define ZNP_DATA_LEN_MAX            32
 
-#define ZCL_CMD_READ_ATTR           0x00
-#define ZCL_CMD_READ_ATTR_RSP       0x01
-#define ZCL_CMD_WRITE_ATTR          0x02
-#define ZCL_CMD_WRITE_ATTR_RSP      0x04
+typedef enum {
+  ZCL_CMD_READ_ATTR = 0x00,
+  ZCL_CMD_READ_ATTR_RSP = 0x01,
+  ZCL_CMD_WRITE_ATTR = 0x02,
+  ZCL_CMD_WRITE_ATTR_RSP = 0x04
+} zcl_cmd_type_t;
 
 typedef enum {
   ZCL_NO_DATA_TYPE = 0x00, 
@@ -83,8 +85,9 @@ typedef struct {
         uint8_t data_bool;
         float data_float;
         uint8_t data_arr[ZNP_DATA_LEN_MAX];
+        uint8_t data_arr_len;
     };
-} znp_cluster_read_rsp_t;
+} zcl_cluster_record_t;
 
 extern int znp_cmd_dev_is_active(uint16_t address);
 
@@ -92,6 +95,8 @@ extern int znp_cmd_dev_refresh_info(uint16_t address);
 
 extern int znp_cmd_dev_register(uint16_t address);
 
-extern znp_cluster_read_rsp_t* znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribute);
+extern int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribute, zcl_cluster_record_t* record);
+
+extern int znp_cmd_cluster_in_write(uint16_t address, uint16_t cluster, uint16_t attribute, zcl_cluster_record_t* record);
 
 #endif

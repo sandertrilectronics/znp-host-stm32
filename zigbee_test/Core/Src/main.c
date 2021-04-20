@@ -19,10 +19,10 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "cmsis_os.h"
-#include "gpio.h"
 #include "main.h"
+#include "cmsis_os.h"
 #include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -40,6 +40,7 @@
 #include "rpc.h"
 #include "rpcTransport.h"
 #include "znp_cmd.h"
+#include "znp_if.h"
 #include "log.h"
 
 /* USER CODE END Includes */
@@ -184,11 +185,11 @@ int znp_init_coordinator(uint8_t enable_commissioning) {
 }
 
 void register_clusters(uint16_t addr) {
-    vTaskDelay(10000);
+    vTaskDelay(20000);
 
     // check registration
     if (!znp_if_dev_exists(addr)) {
-        log_print("Device not registered!");
+        log_print("-> !!! Device not registered!\r\n");
         return;
     }
 
@@ -211,15 +212,22 @@ void register_clusters(uint16_t addr) {
     vTaskDelay(1000);
     log_print("12 ----------------------\r\n");
 
-    // read a cluster
-    znp_cluster_read_rsp_t *resp = znp_cmd_cluster_in_read(addr, 0, 4);
+    // read device name cluster
+    zcl_cluster_record_t wr;
 
-    if (resp != NULL) {
-        log_print("Type: %d\r\n", resp->type);
-        if (resp->type == ZCL_CHARACTER_STRING) {
-            log_print("Str: %s\r\n", resp->data_arr);
-        }
-    }
+    log_print("znp_cmd_cluster_in_read %d\r\n", znp_cmd_cluster_in_read(addr, 0, 4, &wr));
+    log_print("Type: %d\r\n", wr.type);
+    log_print("Str: %s\r\n", wr.data_arr);
+
+    // write thermostat to 19 degree
+    wr.type = ZCL_SIGNED_16BITS;
+    wr.data_i16 = 1900;
+    log_print("znp_cmd_cluster_in_write %d\r\n", znp_cmd_cluster_in_write(addr, 0x0201, 0x0012, &wr));
+
+    // read thermostat value
+    log_print("znp_cmd_cluster_in_read %d\r\n", znp_cmd_cluster_in_read(addr, 0x0201, 0x0012, &wr));
+    log_print("Type: %d\r\n", wr.type);
+    log_print("Data: %d\r\n", wr.data_i16);
 }
 
 /////////////////////////////////////////////////
@@ -275,6 +283,33 @@ void vComTask(void *pvParameters) {
         // give other tasks time to run
         vTaskDelay(0);
     }
+}
+
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName) {
+    /* Run time stack overflow checking is performed if
+    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+    called if a stack overflow is detected. */
+    log_print("-> !!! Stack overflow in %s\r\n", pcTaskName);
+    while (1)
+        ;
+}
+/* USER CODE END 4 */
+
+/* USER CODE BEGIN 5 */
+void vApplicationMallocFailedHook(void) {
+    /* vApplicationMallocFailedHook() will only be called if
+    configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h. It is a hook
+    function that will get called if a call to pvPortMalloc() fails.
+    pvPortMalloc() is called internally by the kernel whenever a task, queue,
+    timer or semaphore is created. It is also called by various parts of the
+    demo application. If heap_1.c or heap_2.c are used, then the size of the
+    heap available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
+    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
+    to query the size of free heap space that remains (although it does not
+    provide information on how the remaining heap might be fragmented). */
+    log_print("-> !!! Malloc failed\r\n");
+    while (1)
+        ;
 }
 /* USER CODE END 0 */
 
