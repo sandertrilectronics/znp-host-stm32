@@ -1,9 +1,11 @@
 # znp-host-stm32
-This project contains the znp-host-framework as found in:
+An example project for interfacing with the ZNP firmware on a CC2530 Zigbee Module from TI using an STM32 microcontroller.
+
+This project expands the znp-host-framework as found in:
 
 https://github.com/pengphei/znp-host-framework
 
-The framework has been ported to the STM32 and some extra missing commands are added. The goal of this repository is to support all commands, just as Z-Tool on the PC would, but executable from the STM32 processor (or any other embedded device).
+The framework has been ported to the STM32 and some extra missing commands are added. A lot of other code that was not meant for an embedde device was removed (file IO, malloc, etc). The goal of this repository is to support all commands in the ZNP firmware, just as Z-Tool on the PC would, but executable from the STM32 processor (or any other embedded device).
 
 # Software Buildup
 The project uses FreeRTOS to manage two tasks: 
@@ -55,7 +57,7 @@ https://www.st.com/en/evaluation-tools/p-l496g-cell02.html
 
 https://www.waveshare.com/cc2530-eval-kit.htm
 
-The CC2530 Eval Kit runs the ZNP firmware found in Z-Stack 3.0.2. For convienence it is also found in this repository as source file (CC2530ZNP-with-SBL.hex). This should be flashed on using the CC-Debuger from TI.
+The CC2530 Eval Kit runs the ZNP firmware found in Z-Stack 3.0.2. For convienence it is also found in this repository as source file (CC2530ZNP-with-SBL.hex). This should be flashed on the CC2530 using the CC-Debuger from TI before connecting it with the STM32.
 
 Some connections between the modules are to be made. The Arduino headers on the bottom side of the P-L496G-CELL02 are used to connect to the CC2530 Eval Kit. The connections are as follows:
 
