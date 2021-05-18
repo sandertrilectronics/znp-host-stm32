@@ -320,7 +320,7 @@ static mtZdoCb_t mtZdoCb = { //
 				NULL, 						// MT_ZDO_MATCH_DESC_RSP_SENT
 				NULL,						//
 				NULL 						//
-				};
+		};
 /********************************************************************
  * AF CALL BACK FUNCTIONS
  */
@@ -338,7 +338,8 @@ static uint8_t mtAfDataConfirmCb(DataConfirmFormat_t *msg) {
 static uint8_t mtAfIncomingMsgCb(IncomingMsgFormat_t *msg) {
 	log_print("\nIncoming Message from Endpoint 0x%02X and Address 0x%04X:\n", msg->SrcEndpoint, msg->SrcAddr);
 	for (uint8_t i = 0; i < msg->Len; i++)
-		log_print("%02x ", msg->Data[i]);;
+		log_print("%02x ", msg->Data[i]);
+	;
 
 	return 0;
 }
@@ -506,15 +507,128 @@ int znp_init_coordinator(uint8_t enable_commissioning) {
 	return 0;
 }
 
+/*
+ read from:
+ https://github.com/zigpy/zigpy-cc/blob/e75d1fccfcd225abf6ac93a1e215ea16b2018897/zigpy_cc/zigbee/start_znp.py#L150
+
+ Endpoints = [
+ Endpoint(endpoint=1, appprofid=0x0104),
+ Endpoint(endpoint=2, appprofid=0x0101),
+ Endpoint(endpoint=3, appprofid=0x0106),
+ Endpoint(endpoint=4, appprofid=0x0107),
+ Endpoint(endpoint=5, appprofid=0x0108),
+ Endpoint(endpoint=6, appprofid=0x0109),
+ Endpoint(endpoint=8, appprofid=0x0104),
+ Endpoint(
+ endpoint=11,
+ appprofid=0x0104,
+ appdeviceid=0x0400,
+ appnumoutclusters=2,
+ appoutclusterlist=[IasZone.cluster_id, IasWd.cluster_id],
+ ),
+ # TERNCY: https://github.com/Koenkk/zigbee-herdsman/issues/82
+ Endpoint(endpoint=0x6E, appprofid=0x0104),
+ Endpoint(endpoint=12, appprofid=0xC05E),
+ Endpoint(
+ endpoint=13,
+ appprofid=0x0104,
+ appnuminclusters=1,
+ appinclusterlist=[Ota.cluster_id],
+ ),
+ # Insta/Jung/Gira: OTA fallback EP (since it's buggy in firmware 10023202
+ # when it tries to find a matching EP for OTA - it queries for ZLL profile,
+ # but then contacts with HA profile)
+ Endpoint(endpoint=47, appprofid=0x0104),
+ Endpoint(endpoint=242, appprofid=0xA1E0),
+ ]
+ */
+
+int znp_register_coordinator(void) {
+	RegisterFormat_t reg_req = { 0 };
+
+	// register endpoint 1
+	reg_req.EndPoint = 0x01;
+	reg_req.AppProfId = 0x104;
+	reg_req.AppDeviceId = 5;
+	reg_req.AppDevVer = 0x00;
+	reg_req.LatencyReq = 0;
+	reg_req.AppNumInClusters = 0;
+	reg_req.AppNumOutClusters = 0;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 2
+	reg_req.EndPoint = 0x02;
+	reg_req.AppProfId = 0x101;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 3
+	reg_req.EndPoint = 0x03;
+	reg_req.AppProfId = 0x106;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 4
+	reg_req.EndPoint = 0x04;
+	reg_req.AppProfId = 0x107;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 5
+	reg_req.EndPoint = 0x05;
+	reg_req.AppProfId = 0x108;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 6
+	reg_req.EndPoint = 0x06;
+	reg_req.AppProfId = 0x109;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 8
+	reg_req.EndPoint = 0x08;
+	reg_req.AppProfId = 0x104;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 12
+	reg_req.EndPoint = 0x0C;
+	reg_req.AppProfId = 0xC05E;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 47
+	reg_req.EndPoint = 0x2F;
+	reg_req.AppProfId = 0x104;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 110
+	reg_req.EndPoint = 0x6e;
+	reg_req.AppProfId = 0x104;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// register endpoint 242
+	reg_req.EndPoint = 0xf2;
+	reg_req.AppProfId = 0xA1E0;
+	afRegister(&reg_req);
+	rcpWaitPeriod(1000);
+
+	// all good
+	return 0;
+}
+
 #define ZCL_READ_ATTR			0x00
 #define ZCL_READ_ATTR_RSP		0x01
 #define ZCL_WRITE_ATTR			0x02
 #define ZCL_WRITE_ATTR_RSP		0x04
 
-void register_clusters(uint16_t addr) {
-	SimpleDescReqFormat_t desc_req;
+void do_transaction(uint16_t addr) {
+	IeeeAddrReqFormat_t req;
 	ActiveEpReqFormat_t act_req;
-	RegisterFormat_t reg_req;
 	DataRequestFormat_t data_req;
 
 	rcpWaitPeriod(10000);
@@ -528,43 +642,20 @@ void register_clusters(uint16_t addr) {
 	rcpWaitPeriod(10000);
 	log_print("2 ----------------------\r\n");
 
-	// request descriptors
-	desc_req.DstAddr = addr;
-	desc_req.NwkAddrOfInterest = addr;
-	desc_req.Endpoint = 1;
-	zdoSimpleDescReq(&desc_req);
+	// request ieee address
+	req.ShortAddr = addr;
+	req.ReqType = 0x00;
+	req.StartIndex = 0x00;
+	zdoIeeeAddrReq(&req);
 
 	rcpWaitPeriod(10000);
 	log_print("3 ----------------------\r\n");
 
-	// register device
-	reg_req.EndPoint = 0x01;
-	reg_req.AppProfId = 0x0104;
-	reg_req.AppDeviceId = 0x0301;
-	reg_req.AppDevVer = 0x01;
-	reg_req.LatencyReq = 0;
-	reg_req.AppNumInClusters = 8;
-	reg_req.AppInClusterList[0] = 0x0000;
-	reg_req.AppInClusterList[1] = 0x0001;
-	reg_req.AppInClusterList[2] = 0x0003;
-	reg_req.AppInClusterList[3] = 0x000a;
-	reg_req.AppInClusterList[4] = 0x0020;
-	reg_req.AppInClusterList[5] = 0x0201;
-	reg_req.AppInClusterList[6] = 0x0204;
-	reg_req.AppInClusterList[7] = 0x0b05;
-	reg_req.AppNumOutClusters = 2;
-	reg_req.AppOutClusterList[0] = 0x0000;
-	reg_req.AppOutClusterList[1] = 0x0019;
-	afRegister(&reg_req);
-
-	rcpWaitPeriod(10000);
-	log_print("4 ----------------------\r\n");
-
-	// read a cluster
+	// read a cluster (0x0000, 0x0004, aka manufacturer name)
 	data_req.DstAddr = addr;
 	data_req.DstEndpoint = 0x01;
 	data_req.SrcEndpoint = 0x01;
-	data_req.ClusterID = 0x0201;
+	data_req.ClusterID = 0x0000;
 	data_req.TransID = 0x05;
 	data_req.Options = 0x00;
 	data_req.Radius = 0x07;
@@ -577,7 +668,7 @@ void register_clusters(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("5 ----------------------\r\n");
+	log_print("4 ----------------------\r\n");
 }
 
 /////////////////////////////////////////////////
@@ -597,10 +688,20 @@ void vAppTask(void *pvParameters) {
 	// ping ok?
 	if (sysVersion() == 0) {
 		// initialize coordinator
-		znp_init_coordinator(0);
+		znp_init_coordinator(1);
+
+		// give some time to breathe
+		rcpWaitPeriod(10000);
+
+		// register clusters in coordinator
+		znp_register_coordinator();
+
+		// give some time to breathe
+		rcpWaitPeriod(10000);
 
 		// register cluster
-		register_clusters(0x09d1);
+		do_transaction(0x09d1);
+		do_transaction(0x8203);
 	}
 
 	// endless loop, handle CC2530 packets
