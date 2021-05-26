@@ -626,6 +626,9 @@ int znp_register_coordinator(void) {
 #define ZCL_WRITE_ATTR			0x02
 #define ZCL_WRITE_ATTR_RSP		0x04
 
+// Zigbee cluster library specification
+// https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf
+
 void do_transaction(uint16_t addr) {
 	IeeeAddrReqFormat_t req;
 	ActiveEpReqFormat_t act_req;
@@ -669,6 +672,46 @@ void do_transaction(uint16_t addr) {
 
 	rcpWaitPeriod(10000);
 	log_print("4 ----------------------\r\n");
+
+	// move to hue command (ZCL specification page 149)
+	data_req.DstAddr = addr;
+	data_req.DstEndpoint = 0x01;
+	data_req.SrcEndpoint = 0x01;
+	data_req.ClusterID = 0x0006;
+	data_req.TransID = 0x05;
+	data_req.Options = 0x00;
+	data_req.Radius = 0x07;
+	data_req.Len = 3;
+	data_req.Data[0] = 0x01; // frame control
+	data_req.Data[1] = 0x03; // transaction sequence num
+	data_req.Data[2] = 0x01; // on command
+
+	afDataRequest(&data_req);
+
+	rcpWaitPeriod(10000);
+	log_print("5 ----------------------\r\n");
+
+	// move to hue command (ZCL specification page 334)
+	data_req.DstAddr = addr;
+	data_req.DstEndpoint = 0x01;
+	data_req.SrcEndpoint = 0x01;
+	data_req.ClusterID = 0x0300;
+	data_req.TransID = 0x05;
+	data_req.Options = 0x00;
+	data_req.Radius = 0x07;
+	data_req.Len = 7;
+	data_req.Data[0] = 0x01; // frame control
+	data_req.Data[1] = 0x03; // transaction sequence num
+	data_req.Data[2] = 0x00; // move to hue command
+	data_req.Data[3] = 0x50; // HUE
+	data_req.Data[4] = 0x00; // direction, shortest distance
+	data_req.Data[5] = 0x00; // transition time low
+	data_req.Data[6] = 0x00; // transition time high
+
+	afDataRequest(&data_req);
+
+	rcpWaitPeriod(10000);
+	log_print("6 ----------------------\r\n");
 }
 
 /////////////////////////////////////////////////
