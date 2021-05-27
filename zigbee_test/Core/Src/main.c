@@ -666,7 +666,7 @@ void do_transaction(uint16_t addr) {
 
 	// read a cluster (0x0000, 0x0004, aka manufacturer name)
 	data_req.DstAddr = addr;
-	data_req.DstEndpoint = 0x01;
+	data_req.DstEndpoint = 0x0B;
 	data_req.SrcEndpoint = 0x01;
 	data_req.ClusterID = 0x0000;
 	data_req.TransID = 0x05;
@@ -685,7 +685,7 @@ void do_transaction(uint16_t addr) {
 
 	// Turn off command (ZCL specification page 149)
 	data_req.DstAddr = addr;
-	data_req.DstEndpoint = 0x01;
+	data_req.DstEndpoint = 0x0B;
 	data_req.SrcEndpoint = 0x01;
 	data_req.ClusterID = 0x0006;
 	data_req.TransID = 0x05;
@@ -703,7 +703,7 @@ void do_transaction(uint16_t addr) {
 
 	// Turn on command (ZCL specification page 149)
 	data_req.DstAddr = addr;
-	data_req.DstEndpoint = 0x01;
+	data_req.DstEndpoint = 0x0B;
 	data_req.SrcEndpoint = 0x01;
 	data_req.ClusterID = 0x0006;
 	data_req.TransID = 0x05;
@@ -721,7 +721,7 @@ void do_transaction(uint16_t addr) {
 
 	// move to hue command (ZCL specification page 334)
 	data_req.DstAddr = addr;
-	data_req.DstEndpoint = 0x01;
+	data_req.DstEndpoint = 0x0B;
 	data_req.SrcEndpoint = 0x01;
 	data_req.ClusterID = 0x0300;
 	data_req.TransID = 0x05;
