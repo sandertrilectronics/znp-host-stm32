@@ -673,7 +673,25 @@ void do_transaction(uint16_t addr) {
 	rcpWaitPeriod(10000);
 	log_print("4 ----------------------\r\n");
 
-	// move to hue command (ZCL specification page 149)
+	// Turn off command (ZCL specification page 149)
+	data_req.DstAddr = addr;
+	data_req.DstEndpoint = 0x01;
+	data_req.SrcEndpoint = 0x01;
+	data_req.ClusterID = 0x0006;
+	data_req.TransID = 0x05;
+	data_req.Options = 0x00;
+	data_req.Radius = 0x07;
+	data_req.Len = 3;
+	data_req.Data[0] = 0x01; // frame control
+	data_req.Data[1] = 0x03; // transaction sequence num
+	data_req.Data[2] = 0x00; // off command
+
+	afDataRequest(&data_req);
+
+	rcpWaitPeriod(10000);
+	log_print("5 ----------------------\r\n");
+
+	// Turn on command (ZCL specification page 149)
 	data_req.DstAddr = addr;
 	data_req.DstEndpoint = 0x01;
 	data_req.SrcEndpoint = 0x01;
@@ -689,7 +707,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("5 ----------------------\r\n");
+	log_print("6 ----------------------\r\n");
 
 	// move to hue command (ZCL specification page 334)
 	data_req.DstAddr = addr;
@@ -711,7 +729,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("6 ----------------------\r\n");
+	log_print("7 ----------------------\r\n");
 }
 
 /////////////////////////////////////////////////
