@@ -630,6 +630,7 @@ int znp_register_coordinator(void) {
 // https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf
 
 void do_transaction(uint16_t addr) {
+	SimpleDescReqFormat_t desc_req;
 	IeeeAddrReqFormat_t req;
 	ActiveEpReqFormat_t act_req;
 	DataRequestFormat_t data_req;
@@ -645,6 +646,15 @@ void do_transaction(uint16_t addr) {
 	rcpWaitPeriod(10000);
 	log_print("2 ----------------------\r\n");
 
+	// request descriptors
+	desc_req.DstAddr = addr;
+	desc_req.NwkAddrOfInterest = addr;
+	desc_req.Endpoint = 1;
+	zdoSimpleDescReq(&desc_req);
+
+	rcpWaitPeriod(10000);
+	log_print("3 ----------------------\r\n");
+
 	// request ieee address
 	req.ShortAddr = addr;
 	req.ReqType = 0x00;
@@ -652,7 +662,7 @@ void do_transaction(uint16_t addr) {
 	zdoIeeeAddrReq(&req);
 
 	rcpWaitPeriod(10000);
-	log_print("3 ----------------------\r\n");
+	log_print("4 ----------------------\r\n");
 
 	// read a cluster (0x0000, 0x0004, aka manufacturer name)
 	data_req.DstAddr = addr;
@@ -671,7 +681,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("4 ----------------------\r\n");
+	log_print("5 ----------------------\r\n");
 
 	// Turn off command (ZCL specification page 149)
 	data_req.DstAddr = addr;
@@ -689,7 +699,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("5 ----------------------\r\n");
+	log_print("6 ----------------------\r\n");
 
 	// Turn on command (ZCL specification page 149)
 	data_req.DstAddr = addr;
@@ -707,7 +717,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("6 ----------------------\r\n");
+	log_print("7 ----------------------\r\n");
 
 	// move to hue command (ZCL specification page 334)
 	data_req.DstAddr = addr;
@@ -729,7 +739,7 @@ void do_transaction(uint16_t addr) {
 	afDataRequest(&data_req);
 
 	rcpWaitPeriod(10000);
-	log_print("7 ----------------------\r\n");
+	log_print("8 ----------------------\r\n");
 }
 
 /////////////////////////////////////////////////
