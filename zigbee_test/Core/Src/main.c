@@ -719,7 +719,7 @@ void do_transaction(uint16_t addr) {
 	rcpWaitPeriod(10000);
 	log_print("7 ----------------------\r\n");
 
-	// move to hue command (ZCL specification page 334)
+	// move to hue and saturation command (ZCL specification page 334)
 	data_req.DstAddr = addr;
 	data_req.DstEndpoint = 0x0B;
 	data_req.SrcEndpoint = 0x01;
@@ -730,9 +730,9 @@ void do_transaction(uint16_t addr) {
 	data_req.Len = 7;
 	data_req.Data[0] = 0x01; // frame control
 	data_req.Data[1] = 0x03; // transaction sequence num
-	data_req.Data[2] = 0x00; // move to hue command
+	data_req.Data[2] = 0x06; // move to hue and saturation command
 	data_req.Data[3] = 0x50; // HUE
-	data_req.Data[4] = 0x00; // direction, shortest distance
+	data_req.Data[4] = 0x00; // SATURATION
 	data_req.Data[5] = 0x00; // transition time low
 	data_req.Data[6] = 0x00; // transition time high
 
