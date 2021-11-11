@@ -50,4 +50,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+/zigbee_test/build
 !CC2530ZNP-with-SBL.hex

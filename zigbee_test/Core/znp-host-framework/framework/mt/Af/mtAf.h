@@ -262,6 +262,16 @@ typedef struct
 
 typedef struct
 {
+	uint8_t success;	
+} RegisterSrspFormat_t;
+
+typedef struct
+{
+	uint8_t success;	
+} DataRequestSrspFormat_t;
+
+typedef struct
+{
 	uint8_t Endpoint;
 	uint8_t FrameDelay;
 	uint8_t WindowSize;
@@ -279,6 +289,8 @@ typedef struct
 typedef uint8_t (*mtAfDataConfirmCb_t)(DataConfirmFormat_t *msg);
 typedef uint8_t (*mtAfIncomingMsgCb_t)(IncomingMsgFormat_t *msg);
 typedef uint8_t (*mtAfIncomingMsgExt_t)(IncomingMsgExtFormat_t *msg);
+typedef uint8_t (*mtAfRegisterSrspCb_t)(RegisterSrspFormat_t *msg);
+typedef uint8_t (*mtAfDataRequestSrspCb_t)(DataRequestSrspFormat_t *msg);
 typedef uint8_t (*mtAfDataRetrieveSrspCb_t)(DataRetrieveSrspFormat_t *msg);
 typedef uint8_t (*mtAfReflectErrorCb_t)(ReflectErrorFormat_t *msg);
 
@@ -287,8 +299,10 @@ typedef struct
 	mtAfDataConfirmCb_t pfnAfDataConfirm;				//MT_AF_DATA_CONFIRM
 	mtAfIncomingMsgCb_t pfnAfIncomingMsg;				//MT_AF_INCOMING_MSG
 	mtAfIncomingMsgExt_t pfnAfIncomingMsgExt;			//MT_AF_INCOMING_MSG_EXT
-	mtAfDataRetrieveSrspCb_t pfnAfDataRetrieveSrsp;	//MT_AF_DATA_RETRIEVE
-	mtAfReflectErrorCb_t pfnAfReflectError;			//MT_AF_REFLECT_ERROR
+	mtAfRegisterSrspCb_t pfnAfRegisterSrsp;				//MT_AF_REGISTER
+	mtAfDataRequestSrspCb_t pfnAfDataReqeuestSrsp;		//MT_AF_DATA_REQUEST
+	mtAfDataRetrieveSrspCb_t pfnAfDataRetrieveSrsp;		//MT_AF_DATA_RETRIEVE
+	mtAfReflectErrorCb_t pfnAfReflectError;				//MT_AF_REFLECT_ERROR
 } mtAfCb_t;
 
 void afRegisterCallbacks(mtAfCb_t cbs);

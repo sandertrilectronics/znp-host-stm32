@@ -76,7 +76,7 @@
  * @return      None.
  **************************************************************************************************
  */
-void dbg_print(int print_level, const char *fmt, ...) {
+/*void dbg_print(int print_level, const char *fmt, ...) {
 	static char working_buffer[256];
 
 	if (print_level >= PRINT_LEVEL) {
@@ -96,4 +96,4 @@ void dbg_print(int print_level, const char *fmt, ...) {
 		// send data
 		log_print("%s", working_buffer);
 	}
-}
+}*/

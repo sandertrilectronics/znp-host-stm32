@@ -374,6 +374,30 @@ uint8_t afDataRetrieve(DataRetrieveFormat_t *req) {
 	return status;
 }
 
+static void processRegisterSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtAfCbs.pfnAfRegisterSrsp) {
+		uint8_t msgIdx = 2;
+		RegisterSrspFormat_t rsp;
+		if (rpcLen < 1) {
+			printf("MT_RPC_ERR_LENGTH\n");
+		}
+		rsp.success = rpcBuff[msgIdx++];
+		mtAfCbs.pfnAfRegisterSrsp(&rsp);
+	}
+}
+
+static void processDataRequestSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
+	if (mtAfCbs.pfnAfDataReqeuestSrsp) {
+		uint8_t msgIdx = 2;
+		DataRequestSrspFormat_t rsp;
+		if (rpcLen < 1) {
+			printf("MT_RPC_ERR_LENGTH\n");
+		}
+		rsp.success = rpcBuff[msgIdx++];
+		mtAfCbs.pfnAfDataReqeuestSrsp(&rsp);
+	}
+}
+
 static void processDataRetrieveSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 	if (mtAfCbs.pfnAfDataRetrieveSrsp) {
 		uint8_t msgIdx = 2;
@@ -505,6 +529,14 @@ static void processSrsp(uint8_t *rpcBuff, uint8_t rpcLen) {
 	memcpy(srspRpcBuff, rpcBuff, rpcLen);
 	//srspRpcLen = rpcLen;
 	switch (rpcBuff[1]) {
+		case MT_AF_REGISTER:
+			dbg_print(PRINT_LEVEL_VERBOSE, "afProcess: MT_AF_REGISTER\n");
+			processRegisterSrsp(rpcBuff, rpcLen);
+			break;
+		case MT_AF_DATA_REQUEST:
+			dbg_print(PRINT_LEVEL_VERBOSE, "afProcess: MT_AF_DATA_REQUEST\n");
+			processDataRequestSrsp(rpcBuff, rpcLen);
+			break;
 		case MT_AF_DATA_RETRIEVE:
 			dbg_print(PRINT_LEVEL_VERBOSE, "afProcess: MT_AF_DATA_RETRIEVE\n");
 			processDataRetrieveSrsp(rpcBuff, rpcLen);
