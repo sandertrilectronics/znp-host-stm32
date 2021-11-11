@@ -8,7 +8,12 @@
 #include "mtSys.h"
 #include "mtUtil.h"
 #include "mtZdo.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 #include <stddef.h>
+
+// semaphore
+static SemaphoreHandle_t _znp_cmd_sem;
 
 static uint8_t _znp_cmd_sequence_num = 0;
 
@@ -28,13 +33,24 @@ static uint8_t znp_dev_has_out_cluster(znp_device_t* dev, uint16_t cluster) {
     return 0;
 }
 
+void znp_cmd_init(void) {
+    _znp_cmd_sem = xSemaphoreCreateBinary();
+    xSemaphoreGive(_znp_cmd_sem);
+}
+
 int znp_cmd_dev_is_active(uint16_t address) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
+        return -1;
+
     // get device handle
     znp_device_t* dev = znp_if_dev_get(address);
 
     // invalid handle?
-    if (dev == NULL)
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // check if the endpoint is active
     ActiveEpReqFormat_t act_req;
@@ -43,19 +59,29 @@ int znp_cmd_dev_is_active(uint16_t address) {
     zdoActiveEpReq(&act_req);
 
     // wait for response
-    if (znp_if_wait_for_event(EVT_RSP_IS_ACTIVE, dev->adr_short, 10000) != NULL)
+    event_result_t* ret = znp_if_wait_for_event(EVT_RSP_IS_ACTIVE, dev->adr_short, 30000);
+
+    xSemaphoreGive(_znp_cmd_sem);
+
+    if (ret != NULL)
         return 0;
     else
         return -1;
 }
 
 int znp_cmd_dev_refresh_info(uint16_t address) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
+        return -1;
+
     // get device handle
     znp_device_t* dev = znp_if_dev_get(address);
 
     // invalid handle?
-    if (dev == NULL)
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // request descriptors
     SimpleDescReqFormat_t desc_req;
@@ -65,23 +91,84 @@ int znp_cmd_dev_refresh_info(uint16_t address) {
     zdoSimpleDescReq(&desc_req);
 
     // wait for response
-    if (znp_if_wait_for_event(EVT_RSP_SIMPLE_DESC, dev->adr_short, 10000) != NULL)
+    event_result_t* ret = znp_if_wait_for_event(EVT_RSP_SIMPLE_DESC, dev->adr_short, 30000);
+
+    xSemaphoreGive(_znp_cmd_sem);
+
+    if (ret != NULL)
         return 0;
     else
         return -1;
 }
 
-int znp_cmd_dev_register(uint16_t address) {
+int znp_cmd_dev_get_ieee(uint16_t address, uint64_t *adr_ieee) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
+        return -1;
+
     // get device handle
     znp_device_t* dev = znp_if_dev_get(address);
 
     // invalid handle?
-    if (dev == NULL)
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
+        return -1;
+    }
+
+    // request descriptors
+    IeeeAddrReqFormat_t req;
+    req.ShortAddr = address;
+    req.ReqType = 0x00;
+    req.StartIndex = 0x00;
+    zdoIeeeAddrReq(&req);
+
+    // wait for response
+    event_result_t* ret = znp_if_wait_for_event(EVT_RSP_IEEE_ADR, dev->adr_short, 30000);
+    if (ret == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
+        return -1;
+    }
+
+    // success?
+    if (ret->result != 0x00) {
+        xSemaphoreGive(_znp_cmd_sem);
+        return -1;
+    }
+
+    // date length correct?
+    if (ret->data_len != sizeof(uint64_t)) {
+        xSemaphoreGive(_znp_cmd_sem);
+        return -1;
+    }
+
+    // copy address
+    memcpy(adr_ieee, &ret->data, sizeof(uint64_t));
+
+    xSemaphoreGive(_znp_cmd_sem);
+
+    // all good
+    return 0;
+}
+
+int znp_cmd_dev_register(uint16_t address) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
         return -1;
 
-    // sanity check if data is ok
-    if (dev->clstr_in_cnt == 0 || dev->clstr_out_cnt == 0 || dev->device_id == 0 || dev->profile_id == 0)
+    // get device handle
+    znp_device_t* dev = znp_if_dev_get(address);
+
+    // invalid handle?
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
+
+    // sanity check if data is ok
+    if (dev->clstr_in_cnt == 0 || dev->clstr_out_cnt == 0 || dev->device_id == 0 || dev->profile_id == 0) {
+        xSemaphoreGive(_znp_cmd_sem);
+        return -1;
+    }
 
     // register device
     RegisterFormat_t reg_req;
@@ -99,23 +186,38 @@ int znp_cmd_dev_register(uint16_t address) {
     afRegister(&reg_req);
 
     // wait for response
-    if (znp_if_wait_for_event(EVT_RSP_REGISTER, dev->adr_short, 10000) != NULL)
+    event_result_t* ret = znp_if_wait_for_event(EVT_RSP_REGISTER, dev->adr_short, 30000);
+
+    xSemaphoreGive(_znp_cmd_sem);
+
+    if (ret != NULL)
         return 0;
     else
         return -1;
 }
 
 int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribute, zcl_cluster_record_t* record) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
+        return -1;
+
+    // reset record data
+    memset(record, 0, sizeof(zcl_cluster_record_t));
+
     // get device handle
     znp_device_t* dev = znp_if_dev_get(address);
 
     // invalid handle?
-    if (dev == NULL)
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // sanity check if data is ok
-    if (!znp_dev_has_in_cluster(dev, cluster))
+    if (!znp_dev_has_in_cluster(dev, cluster)) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // increase number
     _znp_cmd_sequence_num++;
@@ -138,30 +240,42 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
     afDataRequest(&data_req);
 
     // wait for response
-    event_result_t* event = znp_if_wait_for_event(EVT_RSP_DATA_REQUEST, dev->adr_short, 10000);
-    if (event == NULL)
+    event_result_t* event = znp_if_wait_for_event(EVT_RSP_DATA_REQUEST, dev->adr_short, 30000);
+    if (event == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // check length
-    if (event->data_len < 6)
+    if (event->data_len < 6) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // ZCL Header: check transaction sequence number
-    if (event->data[1] != _znp_cmd_sequence_num)
+    if (event->data[1] != _znp_cmd_sequence_num) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // ZCL Header: check command ID
-    if (event->data[2] != ZCL_CMD_READ_ATTR_RSP)
+    if (event->data[2] != ZCL_CMD_READ_ATTR_RSP) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // Data: which attribute is in this response?
     uint16_t read_attribute = (event->data[3] | (event->data[4] << 8));
-    if (read_attribute != attribute)
+    if (read_attribute != attribute) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // Data: status not ok?
-    if (event->data[5] != 0)
+    if (event->data[5] != 0) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // save type
     record->type = event->data[6];
@@ -204,15 +318,16 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
         case ZCL_BITMAP_32BITS:
         case ZCL_UNSIGNED_32BITS:
         case ZCL_SIGNED_32BITS:
-            record->data_u32 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24));
+            record->data_u32 =
+                (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24));
             parse_valid = 1;
             break;
 
         case ZCL_DATA_40BITS:
         case ZCL_BITMAP_40BITS:
         case ZCL_UNSIGNED_40BITS:
-            record->data_u64 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24) |
-                            (event->data[11] << 32));
+            record->data_u64 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) |
+                                (event->data[10] << 24) | (event->data[11] << 32));
             parse_valid = 1;
             break;
 
@@ -222,8 +337,8 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
         case ZCL_DATA_48BITS:
         case ZCL_BITMAP_48BITS:
         case ZCL_UNSIGNED_48BITS:
-            record->data_u64 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24) |
-                            (event->data[11] << 32) | (event->data[12] << 40));
+            record->data_u64 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) |
+                                (event->data[10] << 24) | (event->data[11] << 32) | (event->data[12] << 40));
             parse_valid = 1;
             break;
 
@@ -233,8 +348,9 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
         case ZCL_DATA_56BITS:
         case ZCL_BITMAP_56BITS:
         case ZCL_UNSIGNED_56BITS:
-            record->data_u64 = (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24) |
-                            (event->data[11] << 32) | (event->data[12] << 40) | (event->data[13] << 48));
+            record->data_u64 =
+                (event->data[7] | (event->data[8] << 8) | (event->data[9] << 16) | (event->data[10] << 24) |
+                 (event->data[11] << 32) | (event->data[12] << 40) | (event->data[13] << 48));
             parse_valid = 1;
             break;
 
@@ -283,6 +399,8 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
             break;
     }
 
+    xSemaphoreGive(_znp_cmd_sem);
+
     // check
     if (parse_valid)
         return 0;
@@ -291,16 +409,24 @@ int znp_cmd_cluster_in_read(uint16_t address, uint16_t cluster, uint16_t attribu
 }
 
 int znp_cmd_cluster_in_write(uint16_t address, uint16_t cluster, uint16_t attribute, zcl_cluster_record_t* record) {
+    // take semaphore
+    if (xSemaphoreTake(_znp_cmd_sem, 5000) == pdFALSE)
+        return -1;
+
     // get device handle
     znp_device_t* dev = znp_if_dev_get(address);
 
     // invalid handle?
-    if (dev == NULL)
+    if (dev == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // sanity check if data is ok
-    if (!znp_dev_has_in_cluster(dev, cluster))
+    if (!znp_dev_has_in_cluster(dev, cluster)) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // increase number
     _znp_cmd_sequence_num++;
@@ -479,21 +605,31 @@ int znp_cmd_cluster_in_write(uint16_t address, uint16_t cluster, uint16_t attrib
     afDataRequest(&data_req);
 
     // wait for response
-    event_result_t* event = znp_if_wait_for_event(EVT_RSP_DATA_REQUEST, dev->adr_short, 10000);
-    if (event == NULL)
+    event_result_t* event = znp_if_wait_for_event(EVT_RSP_DATA_REQUEST, dev->adr_short, 30000);
+    if (event == NULL) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // check response length
-    if (event->data_len < 4)
+    if (event->data_len < 4) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // ZCL Header: parse
-    if (event->data[1] != _znp_cmd_sequence_num)
+    if (event->data[1] != _znp_cmd_sequence_num) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
 
     // ZCL Header: parse
-    if (event->data[2] != ZCL_CMD_WRITE_ATTR_RSP)
+    if (event->data[2] != ZCL_CMD_WRITE_ATTR_RSP) {
+        xSemaphoreGive(_znp_cmd_sem);
         return -1;
+    }
+
+    xSemaphoreGive(_znp_cmd_sem);
 
     // result was ok?
     if (event->data[3] == 0x00)

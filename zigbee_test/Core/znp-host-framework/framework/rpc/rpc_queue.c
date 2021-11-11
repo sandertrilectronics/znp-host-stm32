@@ -91,20 +91,12 @@ int llq_timedreceive(llq_t *hndl, char *buffer, int maxLength, int timeout) {
 
 	// wait for a message or timeout
 	if (xQueueReceive(hndl->queue, &q_buf, timeout) != pdTRUE) {
-		sepmRnt = -1;
+		return -1;
 	}
-
-	int rLength = 0;
 
 	// we read with success?
-	if (sepmRnt != -1) {
-		rLength = MIN(q_buf.len, maxLength);
-		memcpy(buffer, q_buf.data, rLength);
-	}
-	// error in read
-	else {
-		rLength = -1;
-	}
+	int rLength = MIN(q_buf.len, maxLength);
+	memcpy(buffer, q_buf.data, rLength);
 
 	// return
 	return rLength;

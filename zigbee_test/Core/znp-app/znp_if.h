@@ -24,6 +24,7 @@ typedef enum {
     EVT_NONE,
     EVT_RSP_IS_ACTIVE,
     EVT_RSP_SIMPLE_DESC,
+    EVT_RSP_IEEE_ADR,
     EVT_RSP_REGISTER,
     EVT_RSP_DATA_REQUEST,
 } event_type_t;

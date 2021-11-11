@@ -72,7 +72,7 @@
 #define SB_FORCE_BOOT              (0xF8)
 #define SB_FORCE_RUN               (SB_FORCE_BOOT ^ 0xFF)
 
-#define SRSP_TIMEOUT_MS            (2000) // 2000ms timeout
+#define SRSP_TIMEOUT_MS            (2500) // 2000ms timeout
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -306,10 +306,13 @@ int32_t rpcProcess(void) {
 
 			//Verify FCS of incoming MT frames
 			fcs = calcFcs(&rpcBuff[0], (len + 3));
+
 			if (rpcBuff[len + 3] != fcs) {
 				dbg_print(PRINT_LEVEL_WARNING, "rpcProcess: fcs error %x:%x\n", rpcBuff[len + 3], fcs);
 				return -1;
 			}
+
+			dbg_print(PRINT_LEVEL_INFO, "rpcProcess: checksum done %02x %02x\n", expectedSrspCmdId, rpcBuff[1]);
 
 			if ((rpcBuff[1] & MT_RPC_CMD_TYPE_MASK) == MT_RPC_CMD_SRSP) {
 				// SRSP command ID deteced
@@ -332,7 +335,7 @@ int32_t rpcProcess(void) {
 			}
 			else {
 				// should be AREQ frame
-				dbg_print(PRINT_LEVEL_INFO, "rpcProcess: writing %d bytes AREQ to tail of the que\n", rpcLen);
+				dbg_print(PRINT_LEVEL_INFO, "rpcProcess: writing %d bytes AREQ to tail of the queue\n", rpcLen);
 
 				// send message to queue
 				llq_add(&rpcLlq, (char*) &rpcBuff[1], rpcLen, 0);
@@ -384,6 +387,9 @@ uint8_t rpcSendFrame(uint8_t cmd0, uint8_t cmd1, uint8_t *payload, uint8_t paylo
 
 	// calculate FCS field
 	buf[payload_len + RPC_UART_HDR_LEN] = calcFcs(&buf[RPC_UART_FRAME_START_IDX], payload_len + RPC_HDR_LEN);
+
+	// NOT SURE IF THIS IS OK???
+	xSemaphoreTake(srspSem, 0);
 
 	// send out RPC  message
 	rpcTransportWrite(buf, payload_len + RPC_UART_HDR_LEN + RPC_UART_FCS_LEN);

@@ -21,10 +21,13 @@ void log_print(const char *fmt, ...) {
         if (xSemaphoreTake(dbg_sem, 1000) == pdFALSE)
             return;
 
+        // append tick
+        snprintf(working_buffer, 256, "%lu\t", xTaskGetTickCount());
+
         // append parameters
         va_list args;
         va_start(args, fmt);
-        vsnprintf(working_buffer, 256, fmt, args);
+        vsnprintf(&working_buffer[strlen(working_buffer)], 256 - strlen(working_buffer), fmt, args);
         va_end(args);
 
         // send data

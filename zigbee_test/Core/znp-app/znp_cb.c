@@ -93,13 +93,6 @@ static uint8_t mtZdoStateChangeIndCb(uint8_t newDevState) {
 }
 
 static uint8_t mtZdoSimpleDescRspCb(SimpleDescRspFormat_t *msg) {
-    // send event
-    event_result_t res;
-    res.type = EVT_RSP_SIMPLE_DESC;
-    res.adr = msg->SrcAddr;
-    res.result = msg->Status;
-    znp_if_evt_send(&res);
-
     // print info
     if (msg->Status == MT_RPC_SUCCESS) {
         log_print("SrcAddr: %04x\n", msg->SrcAddr);
@@ -132,6 +125,13 @@ static uint8_t mtZdoSimpleDescRspCb(SimpleDescRspFormat_t *msg) {
     } else {
         log_print("SimpleDescRsp Status: FAIL 0x%02X\n", msg->Status);
     }
+
+    // send event
+    event_result_t res;
+    res.type = EVT_RSP_SIMPLE_DESC;
+    res.adr = msg->SrcAddr;
+    res.result = msg->Status;
+    znp_if_evt_send(&res);
 
     return msg->Status;
 }
@@ -196,6 +196,9 @@ static uint8_t mtZdoActiveEpRspCb(ActiveEpRspFormat_t *msg) {
         log_print("ActiveEpRsp Status: FAIL 0x%02X\n", msg->Status);
     }
 
+    // callback
+    device_active_response(msg->SrcAddr);
+
     // return status
     return msg->Status;
 }
@@ -224,10 +227,30 @@ static uint8_t mtZdoEndDeviceAnnceIndCb(EndDeviceAnnceIndFormat_t *msg) {
     return 0;
 }
 
+uint8_t mtZdoIeeeAddrRspCb(IeeeAddrRspFormat_t *msg) {
+    // send event
+    event_result_t res;
+    res.type = EVT_RSP_IEEE_ADR;
+    res.adr = msg->NwkAddr;
+    res.result = msg->Status;
+    memcpy(&res.data, &msg->IEEEAddr, sizeof(uint64_t));
+    res.data_len = sizeof(uint64_t);
+    znp_if_evt_send(&res);
+
+    // print
+    log_print("IEEE adr of device 0x%04x\n", msg->NwkAddr);
+    uint32_t top = msg->IEEEAddr >> 32;
+    uint32_t bot = msg->IEEEAddr & 0xffffffff;
+    log_print("IEEEAddr: %08x%08x\r\n", top, bot);
+
+    // return status
+    return msg->Status;
+}
+
 static mtZdoCb_t mtZdoCb = {
     //
     NULL,                      // MT_ZDO_NWK_ADDR_RSP
-    NULL,                      // MT_ZDO_IEEE_ADDR_RSP
+    mtZdoIeeeAddrRspCb,        // MT_ZDO_IEEE_ADDR_RSP
     NULL,                      // MT_ZDO_NODE_DESC_RSP
     NULL,                      // MT_ZDO_POWER_DESC_RSP
     mtZdoSimpleDescRspCb,      // MT_ZDO_SIMPLE_DESC_RSP

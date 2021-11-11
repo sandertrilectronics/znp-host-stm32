@@ -89,9 +89,13 @@ typedef struct {
     };
 } zcl_cluster_record_t;
 
+extern void znp_cmd_init(void);
+
 extern int znp_cmd_dev_is_active(uint16_t address);
 
 extern int znp_cmd_dev_refresh_info(uint16_t address);
+
+extern int znp_cmd_dev_get_ieee(uint16_t address, uint64_t *adr_ieee);
 
 extern int znp_cmd_dev_register(uint16_t address);
 

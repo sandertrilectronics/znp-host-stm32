@@ -26,11 +26,21 @@ event_result_t *znp_if_wait_for_event(event_type_t event_to_wait_for, uint16_t a
         waittime -= passed_time;
         start = xTaskGetTickCount();
 
+        BaseType_t wat = xQueueReceive(_znp_ev_queue, &event, waittime);
+        
         // event was given?
-        if (xQueueReceive(_znp_ev_queue, &event, waittime) == pdTRUE) {
+        if (wat == pdTRUE) {
+            // correct address and event?
             if ((event.adr == address || event.adr == 0xFFFF) && event.type == event_to_wait_for) {
                 break;
             }
+        }
+        else {
+            // error
+            event.type = EVT_NONE;
+
+            // done
+            break;
         }
     }
 
